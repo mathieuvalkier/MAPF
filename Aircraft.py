@@ -36,6 +36,9 @@ class Aircraft(object):
         self.heading = 0
         self.position = (0,0) #xy position on map
 
+        #Added
+        self.constraints = []
+
     def get_heading(self, xy_start, xy_next):
         """
         Determines heading of an aircraft based on a start and end xy position.
@@ -80,6 +83,8 @@ class Aircraft(object):
         xy_from = self.nodes_dict[from_node]["xy_pos"] #xy position of from node
         xy_to = self.nodes_dict[to_node]["xy_pos"] #xy position of to node
         distance_to_move = self.speed*dt #distance to move in this timestep
+
+        #print('list',t, from_node,to_node,xy_from, xy_to,distance_to_move)
   
         #Update position with rounded values
         x = xy_to[0]-xy_from[0]
@@ -89,7 +94,9 @@ class Aircraft(object):
         posx = round(self.position[0] + x_normalized * distance_to_move ,2) #round to prevent errors
         posy = round(self.position[1] + y_normalized * distance_to_move ,2) #round to prevent errors
         self.position = (posx, posy)  
-        self.get_heading(xy_from, xy_to)	
+        self.get_heading(xy_from, xy_to)
+
+        #print('pathtogoal',self.path_to_goal)
 
         #Check if goal is reached or if to_node is reached
         if self.position == xy_to and self.path_to_goal[0][1] == t+dt: #If with this move its current to node is reached
@@ -122,6 +129,7 @@ class Aircraft(object):
             goal_node = self.goal #node to which planning should be done
             
             success, path = simple_single_agent_astar(nodes_dict, start_node, goal_node, heuristics, t)
+            print('path',path)
             if success:
                 self.path_to_goal = path[1:]
                 next_node_id = self.path_to_goal[0][0] #next node is first node in path_to_goal

@@ -22,7 +22,7 @@ edges_file = "edges.xlsx" #xlsx file with for each edge: from  (node), to (node)
 
 #Parameters that can be changed:
 simulation_time = 20
-planner = "Independent" #choose which planner to use (currently only Independent is implemented)
+planner = "Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
 
 #Visualization (can also be changed)
 plot_graph = False    #show graph representation in NetworkX
@@ -156,6 +156,7 @@ escape_pressed = False
 time_end = simulation_time
 dt = 0.1 #should be factor of 0.5 (0.5/dt should be integer)
 t= 0
+constraints = []
 
 print("Simulation Started")
 while running:
@@ -191,12 +192,15 @@ while running:
         if t == 1: #(Hint: Think about the condition that triggers (re)planning) 
             run_independent_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t)
     elif planner == "Prioritized":
-        run_prioritized_planner()
+        constraints = run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints)
     elif planner == "CBS":
         run_CBS()
     #elif planner == -> you may introduce other planners here
     else:
         raise Exception("Planner:", planner, "is not defined.")
+
+    #Build constraint table #added
+    #or do it automatically with return
                        
     #Move the aircraft that are taxiing
     for ac in aircraft_lst: 

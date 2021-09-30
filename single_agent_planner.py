@@ -46,8 +46,52 @@ def heuristicFinder(graph, start_node, goal_node):
         raise Exception('Heuristic cannot be calculated: No connection between', start_node, "and", goal_node)
     return path, path_length
 
+def build_constraint_table(constraints, agent):
 
-def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time_start):
+    constraint_table = []
+    neg_constraints = []
+    maxtimestep = 0
+
+    for constraint in constraints:
+        if agent == constraint['ac']:
+            neg_constraints.append(constraint)
+
+            #print('const timestep', constraint['timestep'])
+
+            maxtimestep = max(constraint['timestep'],maxtimestep)
+
+    for i in range(int(maxtimestep*2) + 1):
+        constraint_table.append([])
+
+    for constraint in neg_constraints:
+        constraint_table[int(constraint['timestep']*2)].append({'loc': constraint['loc']})
+
+
+    return constraint_table, maxtimestep
+
+def is_constrained(curr_loc, next_loc, next_time, constraint_table,agent):
+
+    print('currloc', curr_loc, next_loc, next_time)
+
+    if len(constraint_table)<=next_time:
+        return False
+
+    else:
+        if len(constraint_table[int(next_time*2)]) == 0:
+            return False
+        else:
+            for entries in constraint_table[int(next_time*2)]:
+                coords = entries['loc']
+                if len(coords) == 1:
+                    if coords[0] == next_loc:
+                        return True
+                if len(coords) == 2:
+                    if coords[0] == curr_loc and coords[1] == next_loc:
+                        return True
+            return False
+
+
+def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time_start, agent=0, constraints=0):
     # def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
     """
     Single agent A* search. Time start can only be the time that an agent is at a node.
@@ -62,6 +106,8 @@ def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time
         - success = True/False. True if path is found and False is no path is found
         - path = list of tuples with (loc, timestep) pairs -> example [(37, 1), (101, 2)]. Empty list if success == False.
     """
+
+    constraint_table, maxtimestep = build_constraint_table(constraints, agent)  # list of constraints
     
     from_node_id = from_node
     goal_node_id = goal_node
@@ -85,6 +131,12 @@ def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time
                     'h_val': heuristics[neighbor][goal_node_id],
                     'parent': curr,
                     'timestep': curr['timestep'] + 0.5}
+
+            if is_constrained(curr['loc'], child['loc'], curr['timestep']  ,
+                              constraint_table, agent) == True:
+                print('is constrained')
+                continue
+
             if (child['loc'], child['timestep']) in closed_list:
                 existing_node = closed_list[(child['loc'], child['timestep'])]
                 if compare_nodes(child, existing_node):
