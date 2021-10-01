@@ -84,13 +84,33 @@ class Aircraft(object):
         xy_to = self.nodes_dict[to_node]["xy_pos"] #xy position of to node
         distance_to_move = self.speed*dt #distance to move in this timestep
 
+        # if from_node == to_node:
+        #     print('yes')
+        #
+        #     remaining_path = self.path_to_goal
+        #     self.path_to_goal = remaining_path[1:]
+        #
+        #     new_from_id = self.from_to[1]  # new from node
+        #     new_next_id = self.path_to_goal[0][0]  # new to node
+        #
+        #     if new_from_id != self.from_to[0]:
+        #         self.last_node = self.from_to[0]
+        #
+        #     self.from_to = [new_from_id, new_next_id]  # update new from and to node
+        #     return
+
         #print('list',t, from_node,to_node,xy_from, xy_to,distance_to_move)
   
         #Update position with rounded values
         x = xy_to[0]-xy_from[0]
         y = xy_to[1]-xy_from[1]
-        x_normalized = x / math.sqrt(x**2+y**2)
-        y_normalized = y / math.sqrt(x**2+y**2)
+
+        if x==0 and y==0:
+            x_normalized,y_normalized = 0,0
+        else:
+            x_normalized = x / math.sqrt(x**2+y**2)
+            y_normalized = y / math.sqrt(x**2+y**2)
+
         posx = round(self.position[0] + x_normalized * distance_to_move ,2) #round to prevent errors
         posy = round(self.position[1] + y_normalized * distance_to_move ,2) #round to prevent errors
         self.position = (posx, posy)  

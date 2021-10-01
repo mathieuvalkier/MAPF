@@ -44,10 +44,11 @@ def run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t,
                 for j in range(len(path) - 2):
                     for ids in range(id):
                         ids_ac = aircraft_lst[ids]
-                        if len(ids_ac.path_to_goal)<j-1:
+                        if len(ids_ac.path_to_goal)<j+2:
                             continue
-                        #print('len',j,len(path),len(ids_ac.path_to_goal))
-                        if path[j] == ids_ac.path_to_goal[j+1] and path[j+1] == ids_ac.path_to_goal[j]:
+                        #print('len',j,path[j+1],ids_ac.path_to_goal[j-1])
+                        if path[j][0] == ids_ac.path_to_goal[j][0] and path[j+1][0] == ids_ac.path_to_goal[j-1][0]:
+                            #print('ja edge')
                             constraints.append(
                                 {'ac': ac.id,  # Add constraint for current ac
                                  'loc': [path[j][0],path[j+1][0]],
