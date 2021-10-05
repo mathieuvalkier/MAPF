@@ -3,6 +3,8 @@ Run-me.py is the main file of the simulation. Run this file to run the simulatio
 """
 
 import os
+import random
+import string
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -154,9 +156,12 @@ if visualization:
 running=True
 escape_pressed = False
 time_end = simulation_time
-dt = 0.1 #should be factor of 0.5 (0.5/dt should be integer)
+dt = 0.1 #0.1 #should be factor of 0.5 (0.5/dt should be integer)
 t= 0
+next_ac_time = 0
 constraints = []
+
+
 
 print("Simulation Started")
 while running:
@@ -180,29 +185,57 @@ while running:
         escape_pressed = map_running(map_properties, current_states, t)
         timer.sleep(visualization_speed) 
       
-    #Spawn aircraft for this timestep (use for example a random process)
+        
+    #randomize aircraft inputs
+    A_start_nodes = [37,38]
+    A_goal_nodes = [97, 34, 35, 36, 98]
+    D_start_nodes = A_goal_nodes
+    D_goal_nodes = [1, 2]
+    num_of_id = range(0,40)
+    flight_id = tuple(random.sample(range(0, 10), 1))            # flight_id = random.randrange(0, 40, 1)   #.sample will not generate existing id's (without repeating)
+    a_d = random.choice(['A','D'])
+    if a_d == 'A':
+        start_node = random.choice(A_start_nodes)      #.choice
+        goal_node = random.choice(A_goal_nodes)
+    elif a_d == 'D':
+        start_node = random.choice(D_start_nodes)
+        goal_node = random.choice(D_goal_nodes)
+    else:
+        raise ValueError('unknown arrival or departure mode')
+    
+    #Spawn aircraft for this timestep (use for example a random process)    
+    # t_curr = pg.time.get_ticks()
+    # if t_curr > next_ac_time:
+    #     next_ac_time += dt
+    #     ac = Aircraft(tuple(flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
+    #     aircraft_lst.append(ac)
+    
+    
     if t == 1:
-        ac = Aircraft(1, 'A', 37,36,t, nodes_dict) #As an example we will create one aicraft arriving at node 37 with the goal of reaching node 36
-        ac1 = Aircraft(2, 'D', 36,1,t, nodes_dict)#As an example we will create one aicraft arriving at node 36 with the goal of reaching node 37
-        ac2 = Aircraft(3, 'D', 35, 1, t, nodes_dict)
-        ac3 = Aircraft(4, 'D', 34, 1, t, nodes_dict)
-        ac4 = Aircraft(5, 'D', 97, 1, t, nodes_dict)
-        ac5 = Aircraft(6, 'D', 98, 1, t, nodes_dict)
-        ac6 = Aircraft(7, 'A', 38, 98, t, nodes_dict)
+        ac = Aircraft((flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
+        aircraft_lst.append(ac)            
+    elif t == 2:
+        ac = Aircraft((flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
         aircraft_lst.append(ac)
-        aircraft_lst.append(ac1)
-        aircraft_lst.append(ac2)
-        aircraft_lst.append(ac3)
-        aircraft_lst.append(ac4)
-        aircraft_lst.append(ac5)
-        aircraft_lst.append(ac6)
-
-    if t == 2:
-        ac7 = Aircraft(8, 'A', 37, 34, t, nodes_dict)
-        aircraft_lst.append(ac7)
-        ac8 = Aircraft(9, 'A', 38, 35, t, nodes_dict)
-        aircraft_lst.append(ac8)
-
+    elif t == 2.5:
+        ac = Aircraft((flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
+        aircraft_lst.append(ac)
+    elif t == 3:
+        ac = Aircraft((flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
+        aircraft_lst.append(ac)
+    elif t == 3.5:
+        ac = Aircraft((flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
+        aircraft_lst.append(ac)
+    elif t == 4.5:
+        ac = Aircraft((flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
+        aircraft_lst.append(ac)
+        
+    # print(aircraft_lst)
+    
+    #condition that not repeat id
+    # for ac in aircraft_lst[:]:
+    #     if ac.id == 
+            
     #Do planning 
     if planner == "Independent":     
         if t == 1: #(Hint: Think about the condition that triggers (re)planning) 

@@ -8,7 +8,6 @@ import math
 def run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints):
     #raise Exception("Prioritized planner not defined yet.")
 
-
     #for all ac in aircraft_lst get index (Not self.id!) and self
     for id, ac in enumerate(aircraft_lst):
 
