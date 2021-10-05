@@ -5,6 +5,7 @@ Implement prioritized planner here
 from single_agent_planner import simple_single_agent_astar
 import math
 
+
 def run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints):
     #raise Exception("Prioritized planner not defined yet.")
 
@@ -32,9 +33,6 @@ def run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t,
 
                 success, path = simple_single_agent_astar(nodes_dict, ac.start, ac.goal, heuristics, t, ac.id, constraints)
 
-                if path is None:
-                    raise BaseException("No solution found for", self.id)
-
                 if ac.id == 0:    #This is for the first ac, always priority
                     colliding = False
 
@@ -57,6 +55,11 @@ def run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t,
                 if new_constraint == False:
                     colliding = False
 
+            if success is False:
+                print('no path found for', ac.id)
+                ac.status = 'Fail'
+                break
+                #raise BaseException("No solution found for", ac.id)
 
             ac.path_to_goal = path[1:]
             next_node_id = ac.path_to_goal[0][0]  # next node is first node in path_to_goal
