@@ -16,6 +16,7 @@ from Aircraft import Aircraft
 from independent import run_independent_planner
 from prioritized import run_prioritized_planner
 from cbs import run_CBS
+import numpy as np
 
 #%% SET SIMULATION PARAMETERS
 #Input file names (used in import_layout) -> Do not change those unless you want to specify a new layout.
@@ -23,7 +24,7 @@ nodes_file = "nodes.xlsx" #xlsx file with for each node: id, x_pos, y_pos, type
 edges_file = "edges.xlsx" #xlsx file with for each edge: from  (node), to (node), length
 
 #Parameters that can be changed:
-simulation_time = 25
+simulation_time = 1
 planner = "Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
 
 #Visualization (can also be changed)
@@ -286,6 +287,32 @@ while running:
             ac.move(dt, t)
                            
     t = t + dt
+
+
+#Save path data to data.dat file
+paths = []
+for ac in aircraft_lst:
+    path = ac.path_total
+    loc = []
+    time = []
+    print('hier', path)
+    for entry in path:
+        print('daar', entry)
+        loc.append(entry[0])
+        time.append(entry[1])
+
+    paths.append(loc)
+    paths.append(time)
+
+#np.savetxt("data.dat", paths, delimiter =",",fmt ='% s')
+
+import csv
+
+with open('data.dat', 'w', newline='') as student_file:
+    writer = csv.writer(student_file)
+    for entry in paths:
+        writer.writerow(entry)
+
           
 # =============================================================================
 # 2. Implement analysis of output data here

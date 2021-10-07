@@ -65,6 +65,7 @@ def run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t,
             next_node_id = ac.path_to_goal[0][0]  # next node is first node in path_to_goal
             ac.from_to = [path[0][0], next_node_id]
             print("Path AC", ac.id, ":", path)
+            ac.path_total = path
 
             # Check the path
             if path[0][1] != t:

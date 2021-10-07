@@ -31,6 +31,7 @@ class Aircraft(object):
         self.status = None 
         self.path_to_goal = [] #planned path left from current location
         self.from_to = [0,0]
+        self.path_total = []
 
         #State related
         self.heading = 0
