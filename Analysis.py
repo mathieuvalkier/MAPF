@@ -13,3 +13,5 @@ for i in range(0,len(total),2):
 
 #Data is now available as: loc = ac[i][0], time = ac[i][1]
 
+for i in ac:
+    print(i)

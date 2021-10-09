@@ -96,6 +96,9 @@ def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time
     # def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
 
     print('agent', agent)
+    print('dit', from_node, goal_node, time_start, agent, constraints)
+
+
     """
     Single agent A* search. Time start can only be the time that an agent is at a node.
     INPUT:

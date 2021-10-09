@@ -77,6 +77,7 @@ class Aircraft(object):
             - dt = 
             - t = 
         """
+        arrived = False
         
         #Determine nodes between which the ac is moving
         from_node = self.from_to[0]
@@ -106,6 +107,7 @@ class Aircraft(object):
         if self.position == xy_to and self.path_to_goal[0][1] == t+dt: #If with this move its current to node is reached
             if self.position == self.nodes_dict[self.goal]["xy_pos"]: #if the final goal is reached
                 self.status = "arrived"
+                arrived = True
 
             else:  #current to_node is reached, update the remaining path
                 remaining_path = self.path_to_goal
@@ -118,6 +120,8 @@ class Aircraft(object):
                     self.last_node = self.from_to[0]
                 
                 self.from_to = [new_from_id, new_next_id] #update new from and to node
+
+        return arrived
 
     def plan_independent(self, nodes_dict, edges_dict, heuristics, t):
         """

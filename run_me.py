@@ -24,8 +24,8 @@ nodes_file = "nodes.xlsx" #xlsx file with for each node: id, x_pos, y_pos, type
 edges_file = "edges.xlsx" #xlsx file with for each edge: from  (node), to (node), length
 
 #Parameters that can be changed:
-simulation_time = 1
-planner = "Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
+simulation_time = 20
+planner = 'CBS'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
 
 #Visualization (can also be changed)
 plot_graph = False    #show graph representation in NetworkX
@@ -179,6 +179,8 @@ def ac_spawn(id):
     else:
         raise ValueError('unknown arrival or departure mode')
 
+
+
     ac = Aircraft(id, a_d, start_node, goal_node, t, nodes_dict)
     aircraft_lst.append(ac)
 
@@ -214,57 +216,6 @@ while running:
 
     if t % 0.5 == 0:
         ac_spawn(new_id)
-      
-        
-    # #randomize aircraft inputs
-    # A_start_nodes = [37,38]
-    # A_goal_nodes = [97, 34, 35, 36, 98]
-    # D_start_nodes = A_goal_nodes
-    # D_goal_nodes = [1, 2]
-    # num_of_id = range(0,40)
-    # flight_id = tuple(random.sample(range(0, 10), 1))            # flight_id = random.randrange(0, 40, 1)   #.sample will not generate existing id's (without repeating)
-    # a_d = random.choice(['A','D'])
-    # if a_d == 'A':
-    #     start_node = random.choice(A_start_nodes)      #.choice
-    #     goal_node = random.choice(A_goal_nodes)
-    # elif a_d == 'D':
-    #     start_node = random.choice(D_start_nodes)
-    #     goal_node = random.choice(D_goal_nodes)
-    # else:
-    #     raise ValueError('unknown arrival or departure mode')
-    #
-    # #Spawn aircraft for this timestep (use for example a random process)
-    # # t_curr = pg.time.get_ticks()
-    # # if t_curr > next_ac_time:
-    # #     next_ac_time += dt
-    # #     ac = Aircraft(tuple(flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
-    # #     aircraft_lst.append(ac)
-    #
-    #
-    # if t == 1:
-    #     ac = Aircraft((flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
-    #     aircraft_lst.append(ac)
-    # elif t == 2:
-    #     ac = Aircraft((flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
-    #     aircraft_lst.append(ac)
-    # elif t == 2.5:
-    #     ac = Aircraft((flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
-    #     aircraft_lst.append(ac)
-    # elif t == 3:
-    #     ac = Aircraft((flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
-    #     aircraft_lst.append(ac)
-    # elif t == 3.5:
-    #     ac = Aircraft((flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
-    #     aircraft_lst.append(ac)
-    # elif t == 4.5:
-    #     ac = Aircraft((flight_id), str(a_d), start_node, goal_node, t, nodes_dict)
-    #     aircraft_lst.append(ac)
-        
-    # print(aircraft_lst)
-    
-    #condition that not repeat id
-    # for ac in aircraft_lst[:]:
-    #     if ac.id == 
             
     #Do planning 
     if planner == "Independent":     
@@ -273,7 +224,7 @@ while running:
     elif planner == "Prioritized":
         constraints = run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints)
     elif planner == "CBS":
-        run_CBS()
+        run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t)
     #elif planner == -> you may introduce other planners here
     else:
         raise Exception("Planner:", planner, "is not defined.")
@@ -282,9 +233,11 @@ while running:
     #or do it automatically with return
                        
     #Move the aircraft that are taxiing
-    for ac in aircraft_lst: 
-        if ac.status == "taxiing": 
-            ac.move(dt, t)
+    for i, ac in enumerate(aircraft_lst):
+        if ac.status == "taxiing":
+            arrived = ac.move(dt, t)
+            if arrived:
+                del aircraft_lst[i]
                            
     t = t + dt
 
@@ -295,9 +248,7 @@ for ac in aircraft_lst:
     path = ac.path_total
     loc = []
     time = []
-    print('hier', path)
     for entry in path:
-        print('daar', entry)
         loc.append(entry[0])
         time.append(entry[1])
 
