@@ -107,7 +107,7 @@ def create_graph(nodes_dict, edges_dict, plot_graph = True):
     Creates networkX graph based on nodes and edges and plots 
     INPUT:
         - nodes_dict = dictionary with nodes and node properties
-        - edges_dict = dictionary with edges annd edge properties
+        - edges_dict = dictionary with edges and edge properties
         - plot_graph = boolean (True/False) If True, function plots NetworkX graph. True by default.
     RETURNS:
         - graph = networkX graph object
@@ -241,7 +241,7 @@ while running:
     for i, ac in enumerate(aircraft_lst):
         #print('i', i)
         if ac.status == "taxiing":
-            print('i', i)
+            #print('i', i)
             arrived = ac.move(dt, t)
             # if arrived:
             #     del aircraft_lst[i]

@@ -38,7 +38,7 @@ def heuristicFinder(graph, start_node, goal_node):
         - path_length = length of the shortest path
     """
     try:
-        path = nx.dijkstra_path(graph, start_node, goal_node, weight="weight")
+        path = nx.dijkstra_path(graph, start_node, goal_node, 0.5)#weight="weight" )
         path_length = nx.dijkstra_path_length(graph, start_node, goal_node)
     except:
         path = False
@@ -92,7 +92,7 @@ def is_constrained(curr_loc, next_loc, next_time, constraint_table,agent):
         return False
 
 
-def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time_start, agent=0, constraints=0):
+def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time_start, agent=0, constraints=0, edges = 0):
     # def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
 
     #print('agent', agent)
@@ -147,8 +147,12 @@ def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time
             return True, get_path(curr)
 
         for neighbor in nodes_dict[curr['loc']]["neighbors"]:
+            if edges == 0:
+                weight = 0.5
+            else:
+                weight = edges[(curr['loc'], neighbor)]['weight']
             child = {'loc': neighbor,
-                    'g_val': curr['g_val'] + 0.5,
+                    'g_val': curr['g_val'] + weight,#+ 0.5,
                     'h_val': heuristics[neighbor][goal_node_id],
                     'parent': curr,
                     'timestep': curr['timestep'] + 0.5,
