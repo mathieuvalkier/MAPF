@@ -72,6 +72,8 @@ def standard_splitting(collision):
     #                          specified timestep, and the second constraint prevents the second agent to traverse the
     #                          specified edge at the specified timestep
 
+    #print('coll', collision['loc'])
+
     a = {'ac': collision['a1'], 'loc': collision['loc'], 'timestep': collision['timestep']}
     b = {'ac': collision['a2'], 'loc': collision['loc'][::-1], 'timestep': collision['timestep']}
 
@@ -147,7 +149,9 @@ class CBSSolver(object):
             if path is None:
                 raise BaseException('No solutions')
 
-            if self.currents[i] != None:
+            print(self.agent_ids[i], path, self.currents[i])
+
+            if self.currents[i] != -1:
                 root['paths'].append([self.currents[i]] + path)
             else:
                 root['paths'].append(path)
@@ -171,6 +175,7 @@ class CBSSolver(object):
             if len(parent['collisions']) == 0:
                 return parent['paths']
 
+
             constraints = standard_splitting(parent['collisions'][0])
             #print('const', constraints)
 
@@ -192,11 +197,11 @@ class CBSSolver(object):
                 #               ai, child['constraints'])
 
                 success, path = simple_single_agent_astar(self.nodes_dict, self.starts[ai], self.goals[ai], self.heuristics,
-                                                 self.start_times[ai], self.agent_ids[ai], root['constraints'])
+                                                 self.start_times[ai], self.agent_ids[ai], child['constraints'])
 
 
                 if path != None:
-                    if self.currents[i] != None:
+                    if self.currents[ai] != -1:
                         child['paths'][ai] = [self.currents[ai]] + path
                     else:
                         child['paths'][ai] = path
@@ -235,7 +240,9 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
             goals.append(ac.goal)
             time_starts.append(t)
             agent_ids.append(ac.id)
-            currents.append(None)
+            currents.append(-1)
+
+            print('start',starts)
 
             ac.status = "taxiing"
             ac.position = nodes_dict[ac.start]["xy_pos"]
@@ -243,17 +250,27 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
             cbs = CBSSolver(starts, goals, heuristics, nodes_dict,time_starts, agent_ids, currents)
             paths = cbs.find_solution()
 
-            print('path list')
-            for path in paths:
-                print(path)
+            # print('path list')
+            # for path in paths:
+            #     print(path)
 
-            for id, ac_2 in enumerate(aircraft_lst):
+            for ids, path in enumerate(paths):
 
-                ac_2.path_to_goal = paths[id][1:]
-                next_node_id = ac_2.path_to_goal[0][0]  # next node is first node in path_to_goal
-                ac_2.from_to = [paths[id][0][0], next_node_id]
-                print("Path AC", ac_2.id, ":", paths[id])
-                #ac_2.path_total = path
+                aclist = aircraft_lst[agent_ids[ids]]
+                aclist.path_to_goal = path[1:]
+                next_node_id = aclist.path_to_goal[0][0]  # next node is first node in path_to_goal
+                aclist.from_to = [path[0][0], next_node_id]
+                print("Path AC", aclist.id, ":", path)
+
+            # for id, ac_2 in enumerate(aircraft_lst):
+            #
+            #     ai = self.agent_ids.index(constraint['ac'])
+            #
+            #     ac_2.path_to_goal = paths[id][1:]
+            #     next_node_id = ac_2.path_to_goal[0][0]  # next node is first node in path_to_goal
+            #     ac_2.from_to = [paths[id][0][0], next_node_id]
+            #     print("Path AC", ac_2.id, ":", paths[id])
+            #     #ac_2.path_total = path
 
             #Update paths for all aircraft
 

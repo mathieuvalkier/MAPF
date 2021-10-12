@@ -6,7 +6,7 @@ import math
 class Aircraft(object):
     """Aircraft class, should be used in the creation of new aircraft."""
 
-    def __init__(self, flight_id, a_d, start_node, goal_node, spawn_time, nodes_dict):
+    def __init__(self, flight_id, a_d, start_node, goal_node, spawn_time, nodes_dict, size = 1):
         """
         Initalisation of aircraft object.
         INPUT:
@@ -22,6 +22,7 @@ class Aircraft(object):
         self.speed = 1         #how much a/c moves per unit of t
         self.id = flight_id       #flight_id
         self.type = a_d           #arrival or departure (A/D)
+        self.size = size
         self.spawntime = spawn_time #spawntime
         self.start = start_node   #start_node_id
         self.goal = goal_node     #goal_node_id
@@ -78,10 +79,14 @@ class Aircraft(object):
             - t = 
         """
         arrived = False
+
+        print('id', self.id)
+        print(self.path_to_goal)
         
         #Determine nodes between which the ac is moving
         from_node = self.from_to[0]
         to_node = self.from_to[1]
+        print('fromnode', from_node)
         xy_from = self.nodes_dict[from_node]["xy_pos"] #xy position of from node
         xy_to = self.nodes_dict[to_node]["xy_pos"] #xy position of to node
         distance_to_move = self.speed*dt #distance to move in this timestep
@@ -107,6 +112,7 @@ class Aircraft(object):
         if self.position == xy_to and self.path_to_goal[0][1] == t+dt: #If with this move its current to node is reached
             if self.position == self.nodes_dict[self.goal]["xy_pos"]: #if the final goal is reached
                 self.status = "arrived"
+                print('arrived', self.id)
                 arrived = True
 
             else:  #current to_node is reached, update the remaining path

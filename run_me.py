@@ -16,6 +16,7 @@ from Aircraft import Aircraft
 from independent import run_independent_planner
 from prioritized import run_prioritized_planner
 from cbs import run_CBS
+from individual import run_individual
 import numpy as np
 
 #%% SET SIMULATION PARAMETERS
@@ -25,7 +26,7 @@ edges_file = "edges.xlsx" #xlsx file with for each edge: from  (node), to (node)
 
 #Parameters that can be changed:
 simulation_time = 20
-planner = 'CBS'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
+planner = 'Individual'#CBS'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
 
 #Visualization (can also be changed)
 plot_graph = False    #show graph representation in NetworkX
@@ -179,9 +180,11 @@ def ac_spawn(id):
     else:
         raise ValueError('unknown arrival or departure mode')
 
+    size = 1 # 1,2 of 3
 
 
-    ac = Aircraft(id, a_d, start_node, goal_node, t, nodes_dict)
+
+    ac = Aircraft(id, a_d, start_node, goal_node, t, nodes_dict, size)
     aircraft_lst.append(ac)
 
 
@@ -214,7 +217,7 @@ while running:
     else:
         new_id = aircraft_lst[-1].id + 1
 
-    if t % 0.5 == 0:
+    if t % 1 == 0:
         ac_spawn(new_id)
             
     #Do planning 
@@ -225,6 +228,8 @@ while running:
         constraints = run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints)
     elif planner == "CBS":
         run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t)
+    elif planner == "Individual":
+        run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints)
     #elif planner == -> you may introduce other planners here
     else:
         raise Exception("Planner:", planner, "is not defined.")
@@ -234,10 +239,12 @@ while running:
                        
     #Move the aircraft that are taxiing
     for i, ac in enumerate(aircraft_lst):
+        #print('i', i)
         if ac.status == "taxiing":
+            print('i', i)
             arrived = ac.move(dt, t)
-            if arrived:
-                del aircraft_lst[i]
+            # if arrived:
+            #     del aircraft_lst[i]
                            
     t = t + dt
 

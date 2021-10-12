@@ -74,29 +74,29 @@ def is_constrained(curr_loc, next_loc, next_time, constraint_table,agent):
 
     #print('agent',constraint_table)
 
-    if len(constraint_table)<=(next_time*2+1):
+    if len(constraint_table)<(next_time*2+1):
         return False
 
     else:
-        if len(constraint_table[int(next_time*2)]) == 0:
-            return False
-        else:
-            for entries in constraint_table[int(next_time*2)]:
-                coords = entries['loc']
-                if len(coords) == 1:
-                    if coords[0] == next_loc:
-                        return True
-                if len(coords) == 2:
-                    if coords[0] == curr_loc and coords[1] == next_loc:
-                        return True
-            return False
+        # if len(constraint_table[int(next_time*2)]) == 0:
+        #     return False
+        # else:
+        for entries in constraint_table[int(next_time*2)]:
+            coords = entries['loc']
+            if len(coords) == 1:
+                if coords[0] == next_loc:
+                    return True
+            if len(coords) == 2:
+                if coords[0] == curr_loc and coords[1] == next_loc:
+                    return True
+        return False
 
 
 def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time_start, agent=0, constraints=0):
     # def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
 
-    print('agent', agent)
-    print('dit', from_node, goal_node, time_start, agent, constraints)
+    #print('agent', agent)
+    #print('dit', from_node, goal_node, time_start, agent, constraints)
 
 
     """
@@ -114,6 +114,9 @@ def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time
     """
 
     constraint_table, maxtimestep = build_constraint_table(constraints, agent)  # list of constraints
+
+    #print('starttime', time_start)
+    #print('table', constraint_table)
 
     # def directions(parent):
     #     for neighbor in nodes_dict[curr['loc']]["neighbors"]:
