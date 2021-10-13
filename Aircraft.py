@@ -39,7 +39,10 @@ class Aircraft(object):
         self.position = (0,0) #xy position on map
 
         #Added
+        self.vision = []
+        self.busyness = []
         self.constraints = []
+        self.replan = False
 
     def get_heading(self, xy_start, xy_next):
         """
@@ -80,13 +83,13 @@ class Aircraft(object):
         """
         arrived = False
 
-        print('id', self.id)
-        print(self.path_to_goal)
+        #print('id', self.id)
+        #print(self.path_to_goal)
         
         #Determine nodes between which the ac is moving
         from_node = self.from_to[0]
         to_node = self.from_to[1]
-        print('fromnode', from_node)
+        #print('fromnode', from_node)
         xy_from = self.nodes_dict[from_node]["xy_pos"] #xy position of from node
         xy_to = self.nodes_dict[to_node]["xy_pos"] #xy position of to node
         distance_to_move = self.speed*dt #distance to move in this timestep
@@ -127,6 +130,19 @@ class Aircraft(object):
                 
                 self.from_to = [new_from_id, new_next_id] #update new from and to node
 
+                self.replan = True
+
+
+
+                if self.nodes_dict[new_next_id]['type'] == 'intersection':
+                    pass
+
+                if self.nodes_dict[new_next_id]['type'] == 'intersection':
+                    pass
+
+
+        self.vision = []
+
         return arrived
 
     def plan_independent(self, nodes_dict, edges_dict, heuristics, t):
@@ -143,7 +159,7 @@ class Aircraft(object):
             goal_node = self.goal #node to which planning should be done
             
             success, path = simple_single_agent_astar(nodes_dict, start_node, goal_node, heuristics, t)
-            print('path',path)
+            #print('path',path)
             if success:
                 self.path_to_goal = path[1:]
                 next_node_id = self.path_to_goal[0][0] #next node is first node in path_to_goal
