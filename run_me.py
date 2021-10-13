@@ -26,7 +26,8 @@ edges_file = "edges.xlsx" #xlsx file with for each edge: from  (node), to (node)
 
 #Parameters that can be changed:
 simulation_time = 30
-planner = 'Prioritized'#CBS'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
+planner = 'Individual'#CBS'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
+random.seed(1)
 
 #Visualization (can also be changed)
 plot_graph = False    #show graph representation in NetworkX
@@ -166,7 +167,7 @@ constraints = []
 node_lst = []  #list with tuples of goal and start nodes of each ac
 tracks = []
 
-def ac_spawn(id):
+def ac_spawn(id,t):
 
     # randomize aircraft inputs
     A_start_nodes = [37.0, 38.0]
@@ -188,15 +189,34 @@ def ac_spawn(id):
     ac = Aircraft(id, a_d, float(start_node), float(goal_node), t, nodes_dict, size)
     aircraft_lst.append(ac)
     
-    for n in range(len(aircraft_lst)):
-        node_lst.append((ac.goal, ac.start))
-        print('goalnodes', node_lst)
-    for ac in aircraft_lst:
-        path = ac.path_total
-        tracks.append(path)
-        # print('track', tracks)
+    # for n in range(len(aircraft_lst)):
+    #     node_lst.append((ac.goal, ac.start))
+    #     print('goalnodes', node_lst)
+    # for ac in aircraft_lst:
+    #     path = ac.path_total
+    #     tracks.append(path)
+    #     # print('track', tracks)
+
+for i in range(40):
+    if len(aircraft_lst) == 0:
+        new_id = 0
+        spawn_t = 0
+    else:
+        new_id = aircraft_lst[-1].id + 1
+        spawn_t = aircraft_lst[-1].spawntime + random.choice([0.5,1.0,1.5])
+
+    ac_spawn(new_id,spawn_t)
+
+    # if t % 1 == 0:
+    #
+    #     # for ac in aircraft_lst:
+    #     #     path = ac.path_to_goal
+    #     #     print('ptg', path)
+    #     if  t > 2 and node_lst[-1][1] == tracks[:-1][-1][0]: #or node_lst[-1][1] == tracks[:-2][-1][0] :
+    #         ac.spawn_time = t + 1
     
-    
+# ac = Aircraft(23, 'D', 35, 1, 6, nodes_dict, 1)
+# aircraft_lst.append(ac)
          
 print("Simulation Started")
 while running:
@@ -216,27 +236,14 @@ while running:
             if ac.status == "taxiing":
                 current_states[ac.id] = {"ac_id": ac.id,
                                          "xy_pos": ac.position,
-                                         "heading": ac.heading}
+                                         "heading": ac.heading,
+                                         "size": ac.size}
             # else:
             #     ac.status == 'Fail'
             #     print('failed to spawn ac', ac.id)
                 
         escape_pressed = map_running(map_properties, current_states, t)
         timer.sleep(visualization_speed)
-
-
-    if len(aircraft_lst) == 0:
-        new_id = 0
-    else:
-          new_id = aircraft_lst[-1].id + 1
-
-    if t % 1 == 0:
-        ac_spawn(new_id)
-        # for ac in aircraft_lst:
-        #     path = ac.path_to_goal
-        #     print('ptg', path)
-        if  t > 2 and node_lst[-1][1] == tracks[:-1][-1][0]: #or node_lst[-1][1] == tracks[:-2][-1][0] :
-            ac.spawn_time = t + 1
         
     #Do planning 
     if planner == "Independent":     
@@ -264,8 +271,8 @@ while running:
             arrived = ac.move(dt, t)
             # if arrived:
             #     del aircraft_lst[i]
-        else:
-            ac.status == "Fail"
+        # else:
+        #     ac.status == "Fail"
             
                            
     t = t + dt

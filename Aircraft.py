@@ -43,6 +43,7 @@ class Aircraft(object):
         self.busyness = []
         self.constraints = []
         self.replan = False
+        self.check_gate = False
 
     def get_heading(self, xy_start, xy_next):
         """
@@ -115,7 +116,7 @@ class Aircraft(object):
         if self.position == xy_to and self.path_to_goal[0][1] == t+dt: #If with this move its current to node is reached
             if self.position == self.nodes_dict[self.goal]["xy_pos"]: #if the final goal is reached
                 self.status = "arrived"
-                print('arrived', self.id)
+                #print('arrived', self.id)
                 arrived = True
 
             else:  #current to_node is reached, update the remaining path
@@ -130,15 +131,17 @@ class Aircraft(object):
                 
                 self.from_to = [new_from_id, new_next_id] #update new from and to node
 
-                self.replan = True
+                self.replan = True #Needed for weights
+
+                if len(self.path_to_goal)<5 and self.type == 'A':
+                    self.replan = False
+                    self.check_gate = True
 
 
 
-                if self.nodes_dict[new_next_id]['type'] == 'intersection':
-                    pass
 
-                if self.nodes_dict[new_next_id]['type'] == 'intersection':
-                    pass
+
+
 
 
         self.vision = []
