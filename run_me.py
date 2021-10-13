@@ -25,8 +25,8 @@ nodes_file = "nodes.xlsx" #xlsx file with for each node: id, x_pos, y_pos, type
 edges_file = "edges.xlsx" #xlsx file with for each edge: from  (node), to (node), length
 
 #Parameters that can be changed:
-simulation_time = 20
-planner = 'Individual'#CBS'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
+simulation_time = 30
+planner = 'Prioritized'#CBS'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
 
 #Visualization (can also be changed)
 plot_graph = False    #show graph representation in NetworkX
@@ -93,7 +93,8 @@ def import_layout(nodes_file, edges_file):
                            "start_end_pos": start_end_pos
                            }
         edges_dict[edge_id] = edge_properties
-   
+        # print('edges dict', edges_dict)
+        
     #Add neighbor nodes to nodes_dict based on edges between nodes
     for edge in edges_dict:
         from_node = edge[0]
@@ -162,14 +163,16 @@ dt = 0.1 #0.1 #should be factor of 0.5 (0.5/dt should be integer)
 t= 0
 next_ac_time = 0
 constraints = []
+node_lst = []  #list with tuples of goal and start nodes of each ac
+tracks = []
 
 def ac_spawn(id):
 
     # randomize aircraft inputs
-    A_start_nodes = [37, 38]
-    A_goal_nodes = [97, 34, 35, 36, 98]
+    A_start_nodes = [37.0, 38.0]
+    A_goal_nodes = [97.0, 34.0, 35.0, 36.0, 98.0]
     D_start_nodes = A_goal_nodes
-    D_goal_nodes = [1, 2]
+    D_goal_nodes = [1.0, 2.0]
     a_d = random.choice(['A', 'D'])
     if a_d == 'A':
         start_node = random.choice(A_start_nodes)  # .choice
@@ -179,17 +182,22 @@ def ac_spawn(id):
         goal_node = random.choice(D_goal_nodes)
     else:
         raise ValueError('unknown arrival or departure mode')
+    
+    size = random.choice([1,1,1,1,2,2,3])            # 1,2 of 3
 
-    size = 1 # 1,2 of 3
-
-
-
-    ac = Aircraft(id, a_d, start_node, goal_node, t, nodes_dict, size)
+    ac = Aircraft(id, a_d, float(start_node), float(goal_node), t, nodes_dict, size)
     aircraft_lst.append(ac)
-
-
-
-
+    
+    for n in range(len(aircraft_lst)):
+        node_lst.append((ac.goal, ac.start))
+        print('goalnodes', node_lst)
+    for ac in aircraft_lst:
+        path = ac.path_total
+        tracks.append(path)
+        # print('track', tracks)
+    
+    
+         
 print("Simulation Started")
 while running:
     t= round(t,2)    
@@ -209,17 +217,27 @@ while running:
                 current_states[ac.id] = {"ac_id": ac.id,
                                          "xy_pos": ac.position,
                                          "heading": ac.heading}
+            # else:
+            #     ac.status == 'Fail'
+            #     print('failed to spawn ac', ac.id)
+                
         escape_pressed = map_running(map_properties, current_states, t)
         timer.sleep(visualization_speed)
+
 
     if len(aircraft_lst) == 0:
         new_id = 0
     else:
-        new_id = aircraft_lst[-1].id + 1
+          new_id = aircraft_lst[-1].id + 1
 
     if t % 1 == 0:
         ac_spawn(new_id)
-            
+        # for ac in aircraft_lst:
+        #     path = ac.path_to_goal
+        #     print('ptg', path)
+        if  t > 2 and node_lst[-1][1] == tracks[:-1][-1][0]: #or node_lst[-1][1] == tracks[:-2][-1][0] :
+            ac.spawn_time = t + 1
+        
     #Do planning 
     if planner == "Independent":     
         if t == 1: #(Hint: Think about the condition that triggers (re)planning) 
@@ -235,16 +253,20 @@ while running:
         raise Exception("Planner:", planner, "is not defined.")
 
     #Build constraint table #added
-    #or do it automatically with return
+    #or do it automatically with return  
+
                        
     #Move the aircraft that are taxiing
     for i, ac in enumerate(aircraft_lst):
-        #print('i', i)
+        # print('i', i)
         if ac.status == "taxiing":
-            print('i', i)
+            # print('i', i)
             arrived = ac.move(dt, t)
             # if arrived:
             #     del aircraft_lst[i]
+        else:
+            ac.status == "Fail"
+            
                            
     t = t + dt
 
