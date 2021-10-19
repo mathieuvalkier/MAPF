@@ -50,12 +50,12 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
             x2 = ac_2.position[0]
             y1 = ac.position[1]
             y2 = ac_2.position[1]
-
+            
             dx = x2 - x1
             dy = y2 - y1
 
             distance = sqrt( dx**2 + dy**2)
-            add = [ac_2.id, ac_2.heading, ac_2.from_to]
+            add = [ac_2.id, ac_2.heading, ac_2.from_to, ac_2.position]
             if distance <= 2 and add not in ac.vision and ac.id != ac_2.id:
                 ac.vision.append(add)
                 if dx > 0:
@@ -69,16 +69,118 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                     S += 1
         ac.busyness = [N,E,S,W]
 
-        # print(ac.id,'busy', ac.busyness, ac.vision)
-
-        #print(ac.id, 'vision', ac.vision)
-
+        # print(ac.id,'busy', ac.busyness)
         # print('time', ac.spawntime, t)
+        # print(ac.id, 'vision', ac.vision)
+        
+        #Maintaining separation
+        if ac.seperation:
+            curr_node = ac.from_to[0]
+            next_node = ac.from_to[1]
+            constraints = []
+        
+            # for i in nodes_dict[curr_node]['neighbors']:
+            #     print('i', i)
+            for n, item in enumerate(ac.vision):
+                close_curr_node = item[2][0] 
+                close_next_node = item[2][1]
+                x_position = item[3][0]
+                y_position = item[3][1]
+                sep_dx = x_position - ac.position[0]
+                sep_dy = y_position - ac.position[1]
+                # print('sepx',sep_dx)
+                # print('sepy',sep_dy)
+                
+                behind = False
+                
+                if curr_node != 0 and next_node != 0:
+                    if close_curr_node == nodes_dict[curr_node]['neighbors']:
+                        sep_dx <= abs(0.5)
+                        sep_dy <= abs(0.5)
+                    # if sep_dx == 0.5 and sep_dy == 0.5:
+                    #     nodes_dict[curr_node]['neighbors'] = close_curr_node
+                    if close_curr_node == ac.from_to[1]: # or close_next_node == ac.from_to[1] and ac.id != item[0] :
+                        behind = True
+                    
+                    #hold distance when having the same heading
+                    if behind:
+                        if item[1] == ac.heading:
+                            if sep_dy == 0 and sep_dx <= abs(0.5):
+                                for neighbor in nodes_dict[curr_node]['neighbors']:
+                                    constraints.append(
+                                        {'ac': ac.id,
+                                          'loc': [neighbor],
+                                          'timestep': ac.path_to_goal[0][1]})
+                                    
+                                success, path = simple_single_agent_astar(nodes_dict, curr_node, ac.goal, heuristics, t, ac.id, constraints)
+                    
+                                ac.path_to_goal = path[1:]
+                                next_node_id = ac.path_to_goal[0][0]  # next node is first node in path_to_goal
+                                ac.from_to = [path[0][0], next_node_id]
+                                print("Path AC", ac.id, ":", path)
+                                ac.path_total = path
+                    
+                                # Check the path
+                                if path[0][1] != t:
+                                    raise Exception("Something is wrong with the timing of the path planning")
+                                    
+                            elif sep_dx == 0 and sep_dy <= abs(0.5):
+                                for neighbor in nodes_dict[curr_node]['neighbors']:
+                                    constraints.append(
+                                        {'ac': ac.id,
+                                          'loc': [neighbor],
+                                          'timestep': ac.path_to_goal[0][1]})
+                                    
+                                success, path_n = simple_single_agent_astar(nodes_dict, curr_node, ac.goal, heuristics, t, ac.id, constraints)
+                    
+                                ac.path_to_goal = path_n[1:]
+                                next_node_id = ac.path_to_goal[0][0]  # next node is first node in path_to_goal
+                                ac.from_to = [path_n[0][0], next_node_id]
+                                print("Path AC", ac.id, ":", path_n)
+                                # ac.path_total = path
+                    
+                                # Check the path
+                                if path_n[0][1] != t:
+                                    raise Exception("Something is wrong with the timing of the path planning")
+                            
+                    
+                    
 
+            # ac.seperation = False
+                
+                    #hold diagonal distance
+                    else:
+                        behind = False
+                        if close_next_node == ac.from_to[1] and (ac.heading + 90) == item[1] or (ac.heading - 90) == item[1]:
+                            sep_dxy = sqrt(sep_dx**2 + sep_dy**2)
+                            if sep_dxy <= 1:
+                                for entry in nodes_dict[next_node]['neighbors']:
+                                    constraints.append(
+                                        {'ac': ac.id,
+                                          'loc': [entry],
+                                          'timestep': ac.path_to_goal[0][1]})
+                                
+                                success, path2 = simple_single_agent_astar(nodes_dict, curr_node, ac.goal, heuristics, t, ac.id, constraints)
+                    
+                                ac.path_to_goal = path2[1:]
+                                next_node_id = ac.path_to_goal[0][0]  # next node is first node in path_to_goal
+                                ac.from_to = [path2[0][0], next_node_id]
+                                print("Path AC", ac.id, ":", path2)
+                                # ac.path_total = path
+                    
+                                # Check the path
+                                if path2[0][1] != t:
+                                    raise Exception("Something is wrong with the timing of the path planning")
+            ac.seperation = False
+                        
+
+
+            
         if ac.spawntime == t:
 
             ac.status = "taxiing"
             ac.position = nodes_dict[ac.start]["xy_pos"]
+            
 
             success, path = simple_single_agent_astar(nodes_dict, ac.start, ac.goal, heuristics, t, ac.id, constraints)
 

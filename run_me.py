@@ -165,7 +165,6 @@ t= 0
 next_ac_time = 0
 constraints = []
 node_lst = []  #list with tuples of goal and start nodes of each ac
-tracks = []
 
 def ac_spawn(id,t):
 
@@ -192,10 +191,6 @@ def ac_spawn(id,t):
     # for n in range(len(aircraft_lst)):
     #     node_lst.append((ac.goal, ac.start))
     #     print('goalnodes', node_lst)
-    # for ac in aircraft_lst:
-    #     path = ac.path_total
-    #     tracks.append(path)
-    #     # print('track', tracks)
 
 for i in range(40):
     if len(aircraft_lst) == 0:
