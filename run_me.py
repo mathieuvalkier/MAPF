@@ -26,7 +26,7 @@ edges_file = "edges.xlsx" #xlsx file with for each edge: from  (node), to (node)
 
 #Parameters that can be changed:
 simulation_time = 30
-planner = 'Individual'#CBS'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
+planner = 'CBS'#'Individual'#'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
 random.seed(1)
 
 #Visualization (can also be changed)
