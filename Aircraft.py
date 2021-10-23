@@ -46,6 +46,18 @@ class Aircraft(object):
         self.check_gate = False
         self.seperation = False
 
+        #Intersection
+        self.intersections = []
+        self.intersectionsearch = True
+        self.replannode = 0
+        self.intersectionpriority = []
+        self.replan_inter = False
+        self.previous = 0
+
+        self.crossingwait = False
+        self.between = False
+        self.waiting = False
+
 
     def get_heading(self, xy_start, xy_next):
         """
@@ -130,6 +142,8 @@ class Aircraft(object):
 
                 if new_from_id != self.from_to[0]:
                     self.last_node = self.from_to[0]
+
+                self.previous = self.from_to[0]
                 
                 self.from_to = [new_from_id, new_next_id] #update new from and to node
 
@@ -142,6 +156,32 @@ class Aircraft(object):
                 if len(self.path_to_goal)<5 and self.type == 'A':
                     self.replan = False
                     self.check_gate = True
+
+                if self.replannode == self.from_to[0]:
+                    self.replan = False
+                    self.replan_inter = True
+
+                if self.nodes_dict[self.from_to[0]]['type'] == 'intersection':
+                    self.intersectionsearch = True
+                    self.waiting = False
+
+                if self.nodes_dict[self.from_to[0]]['type'] == 'between':
+                    self.between = True
+
+                #find upcoming intersections ac will follow
+        if self.intersectionsearch:
+            intersectlist = []
+            #if self.nodes_dict[self.from_to[0]]['type'] == 'intersection':
+            intersectlist.append(self.from_to[0])
+            #print(self.id, 'intersect')
+            for loc in self.path_to_goal:
+                if self.nodes_dict[loc[0]]['type'] == 'intersection':
+                    intersectlist.append(loc[0])
+            self.intersections = list(intersectlist[0:3])
+            # print('int', self.id, self.intersections)
+            self.intersectionsearch = False
+
+        # print(self.id, self.intersections)
 
         self.vision = []
         return arrived
