@@ -58,6 +58,8 @@ class Aircraft(object):
         self.between = False
         self.waiting = False
 
+        self.actualpath = []
+
 
     def get_heading(self, xy_start, xy_next):
         """

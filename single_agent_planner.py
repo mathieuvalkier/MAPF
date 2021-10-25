@@ -116,7 +116,7 @@ def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time
     constraint_table, maxtimestep = build_constraint_table(constraints, agent)  # list of constraints
 
     #print('starttime', time_start)
-    #print('table', constraint_table)
+    print('table',agent,  constraint_table)
 
     # def directions(parent):
     #     for neighbor in nodes_dict[curr['loc']]["neighbors"]:

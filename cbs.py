@@ -153,7 +153,7 @@ class CBSSolver(object):
             if path is None:
                 raise BaseException('No solutions')
 
-            print(self.agent_ids[i], path, self.currents[i])
+            # print(self.agent_ids[i], path, self.currents[i])
 
             # if self.currents[i] != -1:
             #     root['paths'].append([self.currents[i]] + path)
@@ -178,7 +178,7 @@ class CBSSolver(object):
             parent = self.pop_node()
 
             if len(parent['collisions']) == 0:
-                print('parent', parent['paths'])
+                # print('parent', parent['paths'])
                 return parent['paths']
 
 
@@ -191,14 +191,16 @@ class CBSSolver(object):
                 constraintlist =  list(parent['constraints'])
                 constraintlist.append(constraint)
 
+                ai = self.agent_ids.index(constraint['ac'])
+
                 child = {'cost': 0,
-                        'constraints': constraintlist,
+                        'constraints': constraintlist + list(self.constraint[ai]),
                         'paths': parent['paths'],
                         'collisions': []}
 
-                ai = self.agent_ids.index(constraint['ac'])
 
-                print('ai', ai, self.agent_ids[ai])
+
+                # print('ai', ai, self.agent_ids[ai])
 
 
                 # path = a_star(self.my_map, self.starts[ai], self.goals[ai], self.heuristics[ai],
@@ -250,6 +252,14 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
                         {'ac': ac.id,              #Add constraint for current ac
                          'loc': [entry],
                          'timestep': t+0.5})
+
+            backward.append(
+                {'ac': ac.id,  # Add constraint for current ac
+                 'loc': [ac.previous],
+                 'timestep': t + 0.5})
+            print({'ac': ac.id,  # Add constraint for current ac
+                 'loc': [ac.previous],
+                 'timestep': t + 0.5})
             constraints.append(backward)
 
         #make lists: starts, goals, time_starts, agent_ids
@@ -266,7 +276,7 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
             constraints.append([])
 
             for loc in lock:
-                print('lock', loc[0], loc[1])
+                # print('lock', loc[0], loc[1])
                 if ac.start == loc[0] and loc[1]<3:
                     starts.pop()
                     start_node = ac.start
@@ -278,7 +288,7 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
 
 
 
-            print('start',starts)
+            # print('start',starts)
 
             ac.status = "taxiing"
             ac.position = nodes_dict[ac.start]["xy_pos"]
@@ -286,7 +296,7 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
             cbs = CBSSolver(starts, goals, heuristics, nodes_dict,time_starts, agent_ids, currents, constraints)
             paths = cbs.find_solution()
 
-            print('hier', paths)
+            # print('hier', paths)
 
 
 
@@ -295,7 +305,7 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
             #     print(path)
 
             for ids, path in enumerate(paths):
-                print('paths', path)
+                # print('paths', path)
 
 
 

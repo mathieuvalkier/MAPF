@@ -4,6 +4,9 @@ import time as timer
 import numpy as np
 
 
+
+
+
 def NESW(edges_dict, curr, nex, nesw):
     xys = edges_dict[(curr, nex)]['start_end_pos']
     x1 = xys[0][0]
@@ -176,6 +179,8 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                                     raise Exception("Something is wrong with the timing of the path planning")
             ac.intersectionsearch = True
             ac.seperation = False
+
+###############################################
             
         if ac.spawntime == t:
 
@@ -194,6 +199,8 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
             # Check the path
             if path[0][1] != t:
                 raise Exception("Something is wrong with the timing of the path planning")
+
+#################################################
 
         if ac.replan:
             next_node = ac.from_to[0]
@@ -218,6 +225,8 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                     raise Exception("Something is wrong with the timing of the path planning")
 
                 ac.replan = False
+
+############################################3
 
         if ac.check_gate:
             constraints = []
@@ -248,6 +257,8 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
 
             ac.check_gate = False
 
+##########################################
+
 
         def distance(loc, node, dist):
             x_n, y_n = nodes_dict[node]['x_pos'], nodes_dict[node]['y_pos']
@@ -265,6 +276,8 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                     # print('kruisbotsing', ac.id, ac_v.id)
                     if ac.size > ac_v.size:
                         ac_v.crossingwait = True
+                    if ac.size == ac_v.size:
+                        ac.crossingwait = True
                     else:
                         ac.crossingwait = True
                     #print(ac.intersections)
@@ -276,9 +289,11 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                     ac.replannode = ac.intersections[1]
                     ac_v.replannode = ac_v.intersections[1]
 
-                    if ac.size > ac_v.size:
+                    if ac.size >= ac_v.size:
                         ac.intersectionpriority = [ac_v.id, True, 0]
                         ac_v.intersectionpriority = [ac.id, False, 0]
+
+######################################3
 
         if ac.between and ac.crossingwait and ac.waiting == False:
             print('croswait',ac.id)
@@ -308,6 +323,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
 
         constraints = []
 
+#############################################
 
         if ac.replan_inter:
 

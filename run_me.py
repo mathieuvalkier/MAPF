@@ -26,8 +26,8 @@ edges_file = "edges.xlsx" #xlsx file with for each edge: from  (node), to (node)
 
 #Parameters that can be changed:
 simulation_time = 30
-planner = 'CBS'#'Individual'#'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
-random.seed(1)
+planner = 'Individual'#'CBS'#'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
+random.seed(10)
 
 #Visualization (can also be changed)
 plot_graph = False    #show graph representation in NetworkX
@@ -43,7 +43,7 @@ def import_layout(nodes_file, edges_file):
         - edges_file = xlsx file with edge input data
     RETURNS:
         - nodes_dict = dictionary with nodes and node properties
-        - edges_dict = dictionary with edges annd edge properties
+        - edges_dict = dictionary with edges and edge properties
         - start_and_goal_locations = dictionary with node ids for arrival runways, departure runways and gates 
     """
     gates_xy = []   #lst with (x,y) positions of gates
