@@ -234,7 +234,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
             for id_gate, ac_gate in enumerate(aircraft_lst):
                 if ac_gate.status == None and ac_gate.spawntime < final_t and ac_gate.start == final_loc:
                     #print('test1')
-                    for i in range(3):
+                    for i in range(5):
                         for entry in nodes_dict[ac.from_to[1]]['neighbors']:
                             constraints.append(
                                 {'ac': ac.id,  # Add constraint for current ac
@@ -256,6 +256,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                         raise Exception("Something is wrong with the timing of the path planning")
 
             ac.check_gate = False
+            ac.almostthere = True
 
 ##########################################
 
@@ -274,12 +275,15 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                 if ac.intersections[1] == ac_v.intersections[1] and ac.intersections[2] != ac_v.intersections[2] and distance(ac.position, ac.intersections[1],0.5) and distance(ac_v.position, ac_v.intersections[1],0.5):
 
                     # print('kruisbotsing', ac.id, ac_v.id)
-                    if ac.size > ac_v.size:
-                        ac_v.crossingwait = True
-                    if ac.size == ac_v.size:
-                        ac.crossingwait = True
-                    else:
-                        ac.crossingwait = True
+                    print()
+                    #Dit heb ik ff uitgecomment zodat het andere soepel loopt
+                    # if ac.size > ac_v.size:
+                    #     ac_v.crossingwait = True
+                    # if ac.size == ac_v.size:
+                    #     ac.crossingwait = True
+                    # else:
+                    #     ac.crossingwait = True
+
                     #print(ac.intersections)
                     #print(ac_v.intersections)
                     #timer.sleep(0.5)
@@ -293,10 +297,10 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                         ac.intersectionpriority = [ac_v.id, True, 0]
                         ac_v.intersectionpriority = [ac.id, False, 0]
 
-######################################3
+######################################
 
         if ac.between and ac.crossingwait and ac.waiting == False:
-            print('croswait',ac.id)
+            # print('croswait',ac.id)
             constraints = []
             for i in range(2):
                 for entry in nodes_dict[ac.from_to[0]]['neighbors']:
@@ -304,13 +308,13 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                         {'ac': ac.id,  # Add constraint for current ac
                          'loc': [entry],
                          'timestep': ac.path_to_goal[0][1] + 0.5 * i})  # +i
-            print(constraints)
+            # print(constraints)
             success, path_new = simple_single_agent_astar(nodes_dict, ac.from_to[0], ac.goal, heuristics, t, ac.id,
                                                           constraints)
             ac.path_to_goal = path_new[1:]
             next_node_id = ac.path_to_goal[0][0]  # next node is first node in path_to_goal
             ac.from_to = [path_new[0][0], next_node_id]
-            print("crossPath AC", ac.id, ":", path_new)
+            # print("crossPath AC", ac.id, ":", path_new)
             # ac.path_total = path
 
             ac.intersectionsearch = True
@@ -327,22 +331,30 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
 
         if ac.replan_inter:
 
-            #temp_edges_dict = edges_dict
-            print('edges', edges_dict[(ac.from_to[0], ac.from_to[1])]['weight'])
-            print(ac.from_to[0], ac.from_to[1])
-            temp_edges_dict = edges_dict
-            temp_edges_dict[(ac.from_to[0], ac.from_to[1])]['weight'] = 0.5 + 5
+            print('inter', ac.id, ac.intersectionpriority[0] ,ac.path_to_goal)
+            print('inter', ac.intersectionpriority)
 
-            success, path = simple_single_agent_astar(nodes_dict, ac.from_to[0], ac.goal, heuristics, t, ac.id,
-                                                      constraints, edges=temp_edges_dict)
+
+
+            if ac.from_to[0] != ac.from_to[1]:
+                print('inter wel path')
+                temp_edges_dict = edges_dict
+                temp_edges_dict[(ac.from_to[0], ac.from_to[1])]['weight'] = 0.5 + 5
+
+                success, path = simple_single_agent_astar(nodes_dict, ac.from_to[0], ac.goal, heuristics, t, ac.id,
+                                                          constraints, edges=temp_edges_dict)
+            else:
+                path = [(ac.from_to[0],ac.path_to_goal[0][1]-0.5)] + ac.path_to_goal
+
+            print('inter 1', path)
+
+            ac_v = aircraft_lst[ac.intersectionpriority[0]]
 
             if ac.path_to_goal == path[1:] or ac.previous == path[1][0]:
-                print('path gelijk')
                 ac.intersectionpriority[2] = 0
-                ac_v = aircraft_lst[ac.intersectionpriority[0]]
-                if ac.intersectionpriority[1] == False:
+                print('inter 2 true')
+                if ac.intersectionpriority[1] == False and ac.id>ac_v.id:
                     path = ac_v.intersectionpriority[2]
-                    print(path)
                     ac_v.path_to_goal = path[1:]
                     next_node_id = ac_v.path_to_goal[0][0]  # next node is first node in path_to_goal
                     ac_v.from_to = [path[0][0], next_node_id]
@@ -350,11 +362,10 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                     ac_v.path_total = path
                     ac_v.intersectionsearch = True
             else:
-                print('niet gelijk')
+                print('inter 3 false')
                 ac.intersectionpriority[2] = path
-                if ac.intersectionpriority[1] == False:
-                    print('geen prio')
-                    print(ac.id, path)
+                if ac.intersectionpriority[1] == False or (ac.id>ac_v.id and ac_v.intersectionpriority[2] == 0):
+                    # print(ac.id, path)
                     ac.path_to_goal = path[1:]
                     next_node_id = ac.path_to_goal[0][0]  # next node is first node in path_to_goal
                     ac.from_to = [path[0][0], next_node_id]

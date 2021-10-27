@@ -58,7 +58,10 @@ class Aircraft(object):
         self.between = False
         self.waiting = False
 
+        self.almostthere = False
+
         self.actualpath = []
+
 
 
     def get_heading(self, xy_start, xy_next):
@@ -155,12 +158,12 @@ class Aircraft(object):
                 
                 self.seperation = True
 
-                if len(self.path_to_goal)<5 and self.type == 'A':
+                if len(self.path_to_goal)<5 and self.type == 'A' and not self.almostthere:
                     self.replan = False
                     self.check_gate = True
 
                 if self.replannode == self.from_to[0]:
-                    self.replan = False
+                    #self.replan = False
                     self.replan_inter = True
 
                 if self.nodes_dict[self.from_to[0]]['type'] == 'intersection':
