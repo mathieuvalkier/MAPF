@@ -260,14 +260,9 @@ while running:
                        
     #Move the aircraft that are taxiing
     for i, ac in enumerate(aircraft_lst):
-        # print('i', i)
         if ac.status == "taxiing":
-            # print('i', i)
-            arrived = ac.move(dt, t)
-            # if arrived:
-            #     del aircraft_lst[i]
-        # else:
-        #     ac.status == "Fail"
+            ac.move(dt, t)
+
             
                            
     t = t + dt
@@ -276,7 +271,7 @@ while running:
 #Save path data to data.dat file
 paths = []
 for ac in aircraft_lst:
-    path = ac.path_total
+    path = ac.actualpath
     loc = []
     time = []
     for entry in path:

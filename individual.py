@@ -2,6 +2,8 @@ from single_agent_planner import simple_single_agent_astar
 from math import *
 import time as timer
 import numpy as np
+import random
+random.seed(1)
 
 
 
@@ -33,10 +35,6 @@ def NESW(edges_dict, curr, nex, nesw):
 
 
 def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints):
-    #raise Exception("Prioritized planner not defined yet.")
-
-    # print('edges', edges_dict[(3.0,42.0)])
-    # print('edges', edges_dict[(42.0, 3.0)])
 
     #separation check
     #for id, ac in enumerate(aircraft_lst):
@@ -74,9 +72,6 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                     S += 1
         ac.busyness = [N,E,S,W]
 
-        # print(ac.id,'busy', ac.busyness)
-        # print('time', ac.spawntime, t)
-        # print(ac.id, 'vision', ac.vision)
 
         
         #Maintaining separation
@@ -184,11 +179,25 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
             
         if ac.spawntime == t:
 
+            for ac_g in aircraft_lst:
+                A_goal_nodes = [97.0, 34.0, 35.0, 36.0, 98.0]
+                if ac_g.noreturn and ac_g.goal == ac.start:
+                    A_goal_nodes.remove(ac_g.goal)
+
+                if len(A_goal_nodes)<5:
+                    start_node = random.choice(A_goal_nodes)
+                    ac.start = start_node
+
             ac.status = "taxiing"
             ac.position = nodes_dict[ac.start]["xy_pos"]
+
+            #If there are changes to the weights, take the new values, otherwise use stander (0 is read as 0.5 in planner)
+            edges = 0
+            if ac.edges_dict != None:
+                edges = ac.edges_dict
             
 
-            success, path = simple_single_agent_astar(nodes_dict, ac.start, ac.goal, heuristics, t, ac.id, constraints)
+            success, path = simple_single_agent_astar(nodes_dict, ac.start, ac.goal, heuristics, t, ac.id, constraints, edges)
 
             ac.path_to_goal = path[1:]
             next_node_id = ac.path_to_goal[0][0]  # next node is first node in path_to_goal
@@ -230,24 +239,30 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
 
         if ac.check_gate:
             constraints = []
+            temp_edges_dict = edges_dict  # For to be spawned a/c
             final_loc, final_t = ac.path_to_goal[-1][0], ac.path_to_goal[-1][1]
             for id_gate, ac_gate in enumerate(aircraft_lst):
                 if ac_gate.status == None and ac_gate.spawntime < final_t and ac_gate.start == final_loc:
                     #print('test1')
-                    for i in range(5):
+                    for i in range(3):
                         for entry in nodes_dict[ac.from_to[1]]['neighbors']:
                             constraints.append(
                                 {'ac': ac.id,  # Add constraint for current ac
                                  'loc': [entry],
                                  'timestep': ac.path_to_goal[0][1]+0.5*i}) #+i
+
+                            temp_edges_dict[(ac.from_to[1], entry)][
+                                'weight'] = 0.5 + 10  # Add weights so new a/c will avoid these
+
                     success, path_new = simple_single_agent_astar(nodes_dict, ac.from_to[0], ac.goal, heuristics, t, ac.id,
                                                               constraints)
-                    #print('test2')
+
+                    ac_gate.edges_dict = temp_edges_dict #Store new weights in a/c entry
+
                     ac.path_to_goal = path_new[1:]
                     next_node_id = ac.path_to_goal[0][0]  # next node is first node in path_to_goal
                     ac.from_to = [path_new[0][0], next_node_id]
                     ("Path AC", ac.id, ":", path_new)
-                    #ac.path_total = path
 
                     ac.intersectionsearch = True
 
@@ -256,7 +271,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                         raise Exception("Something is wrong with the timing of the path planning")
 
             ac.check_gate = False
-            ac.almostthere = True
+            ac.noreturn = True
 
 ##########################################
 
@@ -308,9 +323,11 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                         {'ac': ac.id,  # Add constraint for current ac
                          'loc': [entry],
                          'timestep': ac.path_to_goal[0][1] + 0.5 * i})  # +i
+
             # print(constraints)
             success, path_new = simple_single_agent_astar(nodes_dict, ac.from_to[0], ac.goal, heuristics, t, ac.id,
                                                           constraints)
+
             ac.path_to_goal = path_new[1:]
             next_node_id = ac.path_to_goal[0][0]  # next node is first node in path_to_goal
             ac.from_to = [path_new[0][0], next_node_id]
@@ -339,7 +356,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
             if ac.from_to[0] != ac.from_to[1]:
                 print('inter wel path')
                 temp_edges_dict = edges_dict
-                temp_edges_dict[(ac.from_to[0], ac.from_to[1])]['weight'] = 0.5 + 5
+                temp_edges_dict[(ac.from_to[0], ac.from_to[1])]['weight'] = 0.5 + 10
 
                 success, path = simple_single_agent_astar(nodes_dict, ac.from_to[0], ac.goal, heuristics, t, ac.id,
                                                           constraints, edges=temp_edges_dict)

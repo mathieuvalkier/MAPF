@@ -27,6 +27,7 @@ class Aircraft(object):
         self.start = start_node   #start_node_id
         self.goal = goal_node     #goal_node_id
         self.nodes_dict = nodes_dict #keep copy of nodes dict
+        self.edges_dict = None
         
         #Route related
         self.status = None 
@@ -58,7 +59,7 @@ class Aircraft(object):
         self.between = False
         self.waiting = False
 
-        self.almostthere = False
+        self.noreturn = False
 
         self.actualpath = []
 
@@ -101,11 +102,11 @@ class Aircraft(object):
             - dt = 
             - t = 
         """
-        arrived = False
 
-        #print('id', self.id)
-        #print(self.path_to_goal)
-        
+        #Set the start location in the path list, needed for analysis
+        if len(self.actualpath)<1:
+            self.actualpath.append((self.from_to[0],t))
+
         #Determine nodes between which the ac is moving
         from_node = self.from_to[0]
         to_node = self.from_to[1]
@@ -118,6 +119,7 @@ class Aircraft(object):
         x = xy_to[0]-xy_from[0]
         y = xy_to[1]-xy_from[1]
 
+        #Prevents error when standing at the same location
         if x==0 and y==0:
             x_normalized,y_normalized = 0,0
         else:
@@ -129,18 +131,16 @@ class Aircraft(object):
         self.position = (posx, posy)  
         self.get_heading(xy_from, xy_to)
 
-        #print('pathtogoal',self.path_to_goal)
-
         #Check if goal is reached or if to_node is reached
         if self.position == xy_to and self.path_to_goal[0][1] == t+dt: #If with this move its current to node is reached
             if self.position == self.nodes_dict[self.goal]["xy_pos"]: #if the final goal is reached
+                self.actualpath.append((self.from_to[1],t+dt))
                 self.status = "arrived"
-                # print('arrived', self.id)
-                arrived = True
 
             else:  #current to_node is reached, update the remaining path
                 remaining_path = self.path_to_goal
                 self.path_to_goal = remaining_path[1:]
+                self.actualpath.append((self.from_to[1],t+dt))
                 
                 new_from_id = self.from_to[1] #new from node
                 new_next_id = self.path_to_goal[0][0] #new to node
@@ -158,7 +158,7 @@ class Aircraft(object):
                 
                 self.seperation = True
 
-                if len(self.path_to_goal)<5 and self.type == 'A' and not self.almostthere:
+                if len(self.path_to_goal)<5 and self.type == 'A':
                     self.replan = False
                     self.check_gate = True
 
@@ -189,7 +189,7 @@ class Aircraft(object):
         # print(self.id, self.intersections)
 
         self.vision = []
-        return arrived
+        return
 
     def plan_independent(self, nodes_dict, edges_dict, heuristics, t):
         """
