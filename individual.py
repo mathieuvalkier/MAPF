@@ -58,9 +58,10 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
             dy = y2 - y1
 
             distance = sqrt( dx**2 + dy**2)
-            add = [ac_2.id, ac_2.heading, ac_2.from_to, ac_2.position]
+            add = [ac_2.id, ac_2.heading, ac_2.from_to, ac_2.position, ac_2.size]
             if distance <= 2 and add not in ac.vision and ac.id != ac_2.id:
                 ac.vision.append(add)
+                print('vision', ac.id, ac.vision)
                 if dx > 0:
                     E += 1
                 if dx < 0:
@@ -93,6 +94,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                 # print('sepy',sep_dy)
                 
                 behind = False
+                diagonal = False
                 
                 if curr_node != 0 and next_node != 0:
                     if close_curr_node == nodes_dict[curr_node]['neighbors']:
@@ -143,19 +145,26 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                                 # Check the path
                                 if path_n[0][1] != t:
                                     raise Exception("Something is wrong with the timing of the path planning")
-                            
-                    
-                    
-
+  
             # ac.seperation = False
-                
+                    
                     #hold diagonal distance
                     else:
                         behind = False
-                        if close_next_node == ac.from_to[1] and (ac.heading + 90) == item[1] or (ac.heading - 90) == item[1]:
-                            sep_dxy = sqrt(sep_dx**2 + sep_dy**2)
-                            if sep_dxy <= 1:
-                                for entry in nodes_dict[next_node]['neighbors']:
+                        sep_dxy = sqrt(sep_dx**2 + sep_dy**2)
+                        if  (ac.heading + 90) == item[1] and close_next_node == ac.from_to[1]:
+                            diagonal = True
+                        elif  (ac.heading - 90) == item[1] and close_next_node == ac.from_to[1]:
+                            diagonal = True
+                        elif ac.heading == 270 and item[1] == 0 and close_next_node == ac.from_to[1]:
+                            diagonal = True
+                        elif ac.heading == 0 and item[1] == 270 and close_next_node == ac.from_to[1]:
+                            diagonal = True
+                        
+                        if diagonal:
+                            print('sep', sep_dxy)
+                            if sep_dxy <= 1 and item[4] > ac.size:    #and ac.crossingwait == True:
+                                for entry in nodes_dict[curr_node]['neighbors']:
                                     constraints.append(
                                         {'ac': ac.id,
                                           'loc': [entry],
@@ -172,6 +181,36 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                                 # Check the path
                                 if path2[0][1] != t:
                                     raise Exception("Something is wrong with the timing of the path planning")
+                                    
+                            # elif sep_dxy <= 1 and ac.crossingwait == False:
+                                
+                            #     for entry in nodes_dict[close_curr_node]['neighbors']:
+                            #         constraints.append(
+                            #             {'ac': ac_2.id,
+                            #               'loc': [entry],
+                            #               'timestep': ac_2.path_to_goal[0][1]})
+                                
+                            #     success, path2 = simple_single_agent_astar(nodes_dict, close_curr_node, ac_2.goal, heuristics, t, ac_2.id, constraints)
+                    
+                            #     ac_2.path_to_goal = path2[1:]
+                            #     next_node_id = ac_2.path_to_goal[0][0]  # next node is first node in path_to_goal
+                            #     ac_2.from_to = [path2[0][0], next_node_id]
+                            #     print("Path AC", ac_2.id, ":", path2)
+                            #     # ac.path_total = path
+                    
+                            #     # Check the path
+                            #     if path2[0][1] != t:
+                            #         raise Exception("Something is wrong with the timing of the path planning")
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
             ac.intersectionsearch = True
             ac.seperation = False
 
@@ -299,8 +338,8 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                     # else:
                     #     ac.crossingwait = True
 
-                    #print(ac.intersections)
-                    #print(ac_v.intersections)
+                    # print(ac.intersections)
+                    # print(ac_v.intersections)
                     #timer.sleep(0.5)
 
                 if ac.intersections[2] == ac_v.intersections[1] and ac.intersections[1] == ac_v.intersections[2]:
