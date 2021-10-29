@@ -155,119 +155,98 @@ if visualization:
 # =============================================================================
 # 1. While loop and visualization
 # =============================================================================
- 
-#Start of while loop    
-running=True
-escape_pressed = False
-time_end = simulation_time
-dt = 0.1 #0.1 #should be factor of 0.5 (0.5/dt should be integer)
-t= 0
-next_ac_time = 0
-constraints = []
-node_lst = []  #list with tuples of goal and start nodes of each ac
 
-aircraft_lst = []   #List which can contain aircraft agents
+def main_loop():
+    #Start of while loop
+    running=True
+    escape_pressed = False
+    time_end = simulation_time
+    dt = 0.1 #0.1 #should be factor of 0.5 (0.5/dt should be integer)
+    t= 0
+    next_ac_time = 0
+    constraints = []
+    node_lst = []  #list with tuples of goal and start nodes of each ac
 
-def ac_spawn(id,t):
+    aircraft_lst = []   #List which can contain aircraft agents
 
-    # randomize aircraft inputs
-    A_start_nodes = [37.0, 38.0]
-    A_goal_nodes = [97.0, 34.0, 35.0, 36.0, 98.0]
-    D_start_nodes = A_goal_nodes
-    D_goal_nodes = [1.0, 2.0]
-    a_d = random.choice(['A', 'D'])
-    if a_d == 'A':
-        start_node = random.choice(A_start_nodes)  # .choice
-        goal_node = random.choice(A_goal_nodes)
-    elif a_d == 'D':
-        start_node = random.choice(D_start_nodes)
-        goal_node = random.choice(D_goal_nodes)
-    else:
-        raise ValueError('unknown arrival or departure mode')
-    
-    size = random.choice([1,1,1,1,2,2,3])            # 1,2 of 3
+    def ac_spawn(id,t):
 
-    ac = Aircraft(id, a_d, float(start_node), float(goal_node), t, nodes_dict, size)
-    aircraft_lst.append(ac)
-    
-    # for n in range(len(aircraft_lst)):
-    #     node_lst.append((ac.goal, ac.start))
-    #     print('goalnodes', node_lst)
+        # randomize aircraft inputs
+        A_start_nodes = [37.0, 38.0]
+        A_goal_nodes = [97.0, 34.0, 35.0, 36.0, 98.0]
+        D_start_nodes = A_goal_nodes
+        D_goal_nodes = [1.0, 2.0]
+        a_d = random.choice(['A', 'D'])
+        if a_d == 'A':
+            start_node = random.choice(A_start_nodes)  # .choice
+            goal_node = random.choice(A_goal_nodes)
+        elif a_d == 'D':
+            start_node = random.choice(D_start_nodes)
+            goal_node = random.choice(D_goal_nodes)
+        else:
+            raise ValueError('unknown arrival or departure mode')
 
-for i in range(40):
-    if len(aircraft_lst) == 0:
-        new_id = 0
-        spawn_t = 0
-    else:
-        new_id = aircraft_lst[-1].id + 1
-        spawn_t = aircraft_lst[-1].spawntime + random.choice([0.5,1.0,1.5])
+        size = random.choice([1,1,1,1,2,2,3])            # 1,2 of 3
 
-    ac_spawn(new_id,spawn_t)
+        ac = Aircraft(id, a_d, float(start_node), float(goal_node), t, nodes_dict, size)
+        aircraft_lst.append(ac)
 
-    # if t % 1 == 0:
-    #
-    #     # for ac in aircraft_lst:
-    #     #     path = ac.path_to_goal
-    #     #     print('ptg', path)
-    #     if  t > 2 and node_lst[-1][1] == tracks[:-1][-1][0]: #or node_lst[-1][1] == tracks[:-2][-1][0] :
-    #         ac.spawn_time = t + 1
-    
-# ac = Aircraft(23, 'D', 35, 1, 6, nodes_dict, 1)
-# aircraft_lst.append(ac)
-         
-print("Simulation Started")
-while running:
-    t= round(t,2)    
-       
-    #Check conditions for termination
-    if t >= time_end or escape_pressed: 
-        running = False
-        pg.quit()
-        print("Simulation Stopped")
-        break 
-    
-    #Visualization: Update map if visualization is true
-    if visualization:
-        current_states = {} #Collect current states of all aircraft
-        for ac in aircraft_lst:
+    for i in range(40):
+        if len(aircraft_lst) == 0:
+            new_id = 0
+            spawn_t = 0
+        else:
+            new_id = aircraft_lst[-1].id + 1
+            spawn_t = aircraft_lst[-1].spawntime + random.choice([0.5,1.0,1.5])
+
+        ac_spawn(new_id,spawn_t)
+
+    print("Simulation Started")
+    while running:
+        t= round(t,2)
+
+        #Check conditions for termination
+        if t >= time_end or escape_pressed:
+            running = False
+            pg.quit()
+            print("Simulation Stopped")
+            break
+
+        #Visualization: Update map if visualization is true
+        if visualization:
+            current_states = {} #Collect current states of all aircraft
+            for ac in aircraft_lst:
+                if ac.status == "taxiing":
+                    current_states[ac.id] = {"ac_id": ac.id,
+                                             "xy_pos": ac.position,
+                                             "heading": ac.heading,
+                                             "size": ac.size}
+
+            escape_pressed = map_running(map_properties, current_states, t)
+            timer.sleep(visualization_speed)
+
+        #Do planning
+        if planner == "Independent":
+            if t == 1: #(Hint: Think about the condition that triggers (re)planning)
+                run_independent_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t)
+        elif planner == "Prioritized":
+            constraints = run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints)
+        elif planner == "CBS":
+            run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t)
+        elif planner == "Individual":
+            run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints)
+        #elif planner == -> you may introduce other planners here
+        else:
+            raise Exception("Planner:", planner, "is not defined.")
+
+        #Move the aircraft that are taxiing
+        for i, ac in enumerate(aircraft_lst):
             if ac.status == "taxiing":
-                current_states[ac.id] = {"ac_id": ac.id,
-                                         "xy_pos": ac.position,
-                                         "heading": ac.heading,
-                                         "size": ac.size}
-            # else:
-            #     ac.status == 'Fail'
-            #     print('failed to spawn ac', ac.id)
-                
-        escape_pressed = map_running(map_properties, current_states, t)
-        timer.sleep(visualization_speed)
-        
-    #Do planning 
-    if planner == "Independent":     
-        if t == 1: #(Hint: Think about the condition that triggers (re)planning) 
-            run_independent_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t)
-    elif planner == "Prioritized":
-        constraints = run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints)
-    elif planner == "CBS":
-        run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t)
-    elif planner == "Individual":
-        run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints)
-    #elif planner == -> you may introduce other planners here
-    else:
-        raise Exception("Planner:", planner, "is not defined.")
+                ac.move(dt, t)
 
-    #Build constraint table #added
-    #or do it automatically with return  
+        t = t + dt
 
-                       
-    #Move the aircraft that are taxiing
-    for i, ac in enumerate(aircraft_lst):
-        if ac.status == "taxiing":
-            ac.move(dt, t)
-
-            
-                           
-    t = t + dt
+main_loop()
 
 
 #Save path data to data.dat file

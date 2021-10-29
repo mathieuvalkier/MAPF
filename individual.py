@@ -313,8 +313,8 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
             else:
                 ac.intersectionpriority[2] = path   # If path is possible, store path in list
 
-                if ac.intersectionpriority[1] == False or \                     # If ac has no priority and a path or
-                        (ac.id>ac_v.id and ac_v.intersectionpriority[2] == 0):  # this a/c has prio but other a/c no path
+                # If ac has no priority and a path or this a/c has prio but other a/c no path
+                if ac.intersectionpriority[1] == False or (ac.id>ac_v.id and ac_v.intersectionpriority[2] == 0):
 
                     push_path(ac, path, t)  # Push path
 
