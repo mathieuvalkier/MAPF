@@ -6,11 +6,13 @@ import random
 random.seed(1)
 
 
-def push_path(ac, path, t):
+def push_path(ac, path, t, print_path=True):
     ac.path_to_goal = path[1:]
     next_node_id = ac.path_to_goal[0][0]
     ac.from_to = [path[0][0], next_node_id]
-    print("Path AC", ac.id, ":", path)
+
+    if print_path:
+        print("Path AC", ac.id, ":", path)
 
     # Check the path
     if path[0][1] != t:
@@ -41,7 +43,7 @@ def NESW(edges_dict, curr, nex, nesw):
     return (edges_dict)
 
 
-def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints):
+def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints, print_path):
 
     #for all ac in aircraft_lst get index
     for id, ac in enumerate(aircraft_lst):
@@ -125,7 +127,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                                     
                                 success, path = simple_single_agent_astar(nodes_dict, curr_node, ac.goal, heuristics, t, ac.id, constraints)
 
-                                push_path(ac, path, t)  # Push path
+                                push_path(ac, path, t, print_path)  # Push path
                                     
                             elif sep_dx == 0 and sep_dy <= abs(0.5):
                                 for neighbor in nodes_dict[curr_node]['neighbors']:
@@ -136,7 +138,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                                     
                                 success, path_n = simple_single_agent_astar(nodes_dict, curr_node, ac.goal, heuristics, t, ac.id, constraints)
 
-                                push_path(ac, path_n, t)  # Push path
+                                push_path(ac, path_n, t, print_path)  # Push path
                     
                     #hold diagonal distance
                     else:
@@ -161,7 +163,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                                 
                                 success, path2 = simple_single_agent_astar(nodes_dict, curr_node, ac.goal, heuristics, t, ac.id, constraints)
 
-                                push_path(ac, path2, t)  # Push path
+                                push_path(ac, path2, t, print_path)  # Push path
                                     
             ac.intersectionsearch = True
             ac.seperation = False
@@ -194,7 +196,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
 
             success, path = simple_single_agent_astar(nodes_dict, ac.start, ac.goal, heuristics, t, ac.id, constraints, edges)
 
-            push_path(ac, path, t)      #Push path
+            push_path(ac, path, t, print_path)  # Push path
 
         #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### ####
         '''
@@ -214,7 +216,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                 success, path = simple_single_agent_astar(nodes_dict, next_node, ac.goal, heuristics, t, ac.id,
                                                           constraints, edges = temp_edges_dict)
 
-                push_path(ac, path, t)  # Push path
+                push_path(ac, path, t, print_path)  # Push path
 
                 ac.intersectionsearch = True    # New path means new upcoming intersections
                 ac.replan = False               # Turn replan off
@@ -252,7 +254,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
 
                     ac_gate.edges_dict = temp_edges_dict    # Store new weights for new a/c
 
-                    push_path(ac, path_new, t)      # Push path
+                    push_path(ac, path_new, t, print_path)  # Push path
 
                     ac.intersectionsearch = True    # New path means new upcoming intersections
 
@@ -302,12 +304,12 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
             ac_v = aircraft_lst[ac.intersectionpriority[0]]
 
             if ac.path_to_goal == path[1:] or ac.previous == path[1][0]:    # If path is not possible
-                ac.intersectionpriority[2] = 0                              # Set new path to empty
+                ac.intersectionpriority[2] = path                              # Set new path to empty
 
                 if ac.intersectionpriority[1] == False and ac.id>ac_v.id:   # If a/c has no priority but no path
                     path = ac_v.intersectionpriority[2]                     # Take path of other a/c
 
-                    push_path(ac_v, path, t)  # Push path
+                    push_path(ac_v, path, t, print_path)  # Push path
 
                     ac_v.intersectionsearch = True  # New path means new upcoming intersections
             else:
@@ -316,7 +318,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                 # If ac has no priority and a path or this a/c has prio but other a/c no path
                 if ac.intersectionpriority[1] == False or (ac.id>ac_v.id and ac_v.intersectionpriority[2] == 0):
 
-                    push_path(ac, path, t)  # Push path
+                    push_path(ac, path, t, print_path)  # Push path
 
                     ac.intersectionsearch = True    # New path means new upcoming intersections
 

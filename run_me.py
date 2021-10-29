@@ -18,21 +18,21 @@ from prioritized import run_prioritized_planner
 from cbs import run_CBS
 from individual import run_individual
 import numpy as np
+import csv
+
+#Parameters that can be changed:
+simulation_time = 30
+planner = 'Individual'  #'CBS'#'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
+
+#Visualization
+plot_graph = False          #show graph representation in NetworkX
+visualization = True        #pygame visualization
+visualization_speed = 0.1   #set at 0.1 as default
 
 #%% SET SIMULATION PARAMETERS
 #Input file names (used in import_layout) -> Do not change those unless you want to specify a new layout.
 nodes_file = "nodes.xlsx" #xlsx file with for each node: id, x_pos, y_pos, type
 edges_file = "edges.xlsx" #xlsx file with for each edge: from  (node), to (node), length
-
-#Parameters that can be changed:
-simulation_time = 30
-planner = 'Individual'#'CBS'#'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
-random.seed(10)
-
-#Visualization (can also be changed)
-plot_graph = False    #show graph representation in NetworkX
-visualization = True        #pygame visualization
-visualization_speed = 0.1 #set at 0.1 as default
 
 #%%Function definitions
 def import_layout(nodes_file, edges_file):
@@ -147,20 +147,20 @@ nodes_dict, edges_dict, start_and_goal_locations = import_layout(nodes_file, edg
 graph = create_graph(nodes_dict, edges_dict, plot_graph)
 heuristics = calc_heuristics(graph, nodes_dict)
 
-
-
-if visualization:
-    map_properties = map_initialization(nodes_dict, edges_dict) #visualization properties
-
 # =============================================================================
 # 1. While loop and visualization
 # =============================================================================
 
-def main_loop():
+def main_loop(random_id, print_path):
+
+    if visualization:
+        map_properties = map_initialization(nodes_dict, edges_dict)  # visualization properties
+
     #Start of while loop
     running=True
     escape_pressed = False
     time_end = simulation_time
+    random.seed(random_id)
     dt = 0.1 #0.1 #should be factor of 0.5 (0.5/dt should be integer)
     t= 0
     next_ac_time = 0
@@ -234,7 +234,7 @@ def main_loop():
         elif planner == "CBS":
             run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t)
         elif planner == "Individual":
-            run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints)
+            run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints, print_path)
         #elif planner == -> you may introduce other planners here
         else:
             raise Exception("Planner:", planner, "is not defined.")
@@ -246,30 +246,32 @@ def main_loop():
 
         t = t + dt
 
-main_loop()
+    # Save path data to data.dat file
+    paths = []
+    for ac in aircraft_lst:
+        path = ac.actualpath
+        loc = []
+        time = []
+        for entry in path:
+            loc.append(entry[0])
+            time.append(entry[1])
+
+        paths.append(loc)
+        paths.append(time)
+
+    with open('data.dat', 'a', newline='') as student_file:
+        writer = csv.writer(student_file)
+        for entry in paths:
+            writer.writerow(entry)
 
 
-#Save path data to data.dat file
-paths = []
-for ac in aircraft_lst:
-    path = ac.actualpath
-    loc = []
-    time = []
-    for entry in path:
-        loc.append(entry[0])
-        time.append(entry[1])
 
-    paths.append(loc)
-    paths.append(time)
+for i in range(1):
+    # Run main loop
+    main_loop(random_id = i,print_path=False)
 
-#np.savetxt("data.dat", paths, delimiter =",",fmt ='% s')
 
-import csv
 
-with open('data.dat', 'w', newline='') as student_file:
-    writer = csv.writer(student_file)
-    for entry in paths:
-        writer.writerow(entry)
 
           
 # =============================================================================
