@@ -85,8 +85,10 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
         #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### ####
         '''
         #### Maintaining separation
-        #
-        #
+        # IF both a/c's are taxiing on the same edge with the same heading and their seperation distance is < 0.5:
+        # => a/c behind waits for 1 timestep
+        # IF 2 a/c's are heading to the same intersection and the diagonal distance between them is < 1:  
+        # => a/c with lowest size waits for 1 timestep
         #
         '''
 
@@ -97,7 +99,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
 
             for n, item in enumerate(ac.vision):
                 close_curr_node = item[2][0] 
-                close_next_node = item[2][1]
+                close_next_node = item[2][1] 
                 x_position = item[3][0]
                 y_position = item[3][1]
                 sep_dx = x_position - ac.position[0]
@@ -110,25 +112,27 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                     if close_curr_node == nodes_dict[curr_node]['neighbors']:
                         sep_dx <= abs(0.5)
                         sep_dy <= abs(0.5)
-                    # if sep_dx == 0.5 and sep_dy == 0.5:
-                    #     nodes_dict[curr_node]['neighbors'] = close_curr_node
-                    if close_curr_node == ac.from_to[1]: # or close_next_node == ac.from_to[1] and ac.id != item[0] :
-                        behind = True
+            
+                    if close_curr_node == ac.from_to[1]:    #Current a/c behind other a/c in radar
+                        behind = True                       #Turn on condition for a/c's that are behind
                     
-                    #hold distance when having the same heading
+                    #Hold axial distance in x and y direction with same heading
                     if behind:
-                        if item[1] == ac.heading:
+                        if item[1] == ac.heading:            #Same heading
+                        
+                            #Horizontal distance
                             if sep_dy == 0 and sep_dx <= abs(0.5):
                                 for neighbor in nodes_dict[curr_node]['neighbors']:
                                     constraints.append(
-                                        {'ac': ac.id,
+                                        {'ac': ac.id,           #Add edge constraint for current a/c
                                           'loc': [neighbor],
-                                          'timestep': ac.path_to_goal[0][1]})
+                                          'timestep': ac.path_to_goal[0][1]})    #For 1 timestep 
                                     
                                 success, path = simple_single_agent_astar(nodes_dict, curr_node, ac.goal, heuristics, t, ac.id, constraints)
 
                                 push_path(ac, path, t, print_path)  # Push path
-                                    
+                                
+                            #Vertical distance
                             elif sep_dx == 0 and sep_dy <= abs(0.5):
                                 for neighbor in nodes_dict[curr_node]['neighbors']:
                                     constraints.append(
@@ -140,33 +144,33 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
 
                                 push_path(ac, path_n, t, print_path)  # Push path
                     
-                    #hold diagonal distance
+                    #Hold diagonal distance
                     else:
-                        behind = False
-                        sep_dxy = sqrt(sep_dx**2 + sep_dy**2)
+                        behind = False                              #Turn off: next condition is not valid for behind
+                        sep_dxy = sqrt(sep_dx**2 + sep_dy**2)       #Diagonal seperation distance
                         if  (ac.heading + 90) == item[1] and close_next_node == ac.from_to[1]:
-                            diagonal = True
+                            diagonal = True                         #Turn on condition for a/c's heading to same intersection
                         elif  (ac.heading - 90) == item[1] and close_next_node == ac.from_to[1]:
-                            diagonal = True
+                            diagonal = True                         
                         elif ac.heading == 270 and item[1] == 0 and close_next_node == ac.from_to[1]:
                             diagonal = True
                         elif ac.heading == 0 and item[1] == 270 and close_next_node == ac.from_to[1]:
                             diagonal = True
                         
                         if diagonal:
-                            if sep_dxy <= 1 and item[4] >= ac.size:    #and ac.crossingwait == True:
+                            if sep_dxy <= 1 and item[4] >= ac.size:    #Current a/c lower or equal to a/c in radar
                                 for entry in nodes_dict[curr_node]['neighbors']:
                                     constraints.append(
-                                        {'ac': ac.id,
+                                        {'ac': ac.id,                  #Add edge constraint to current a/c
                                           'loc': [entry],
-                                          'timestep': ac.path_to_goal[0][1]})
+                                          'timestep': ac.path_to_goal[0][1]}) #For 1 timestep
                                 
                                 success, path2 = simple_single_agent_astar(nodes_dict, curr_node, ac.goal, heuristics, t, ac.id, constraints)
 
                                 push_path(ac, path2, t, print_path)  # Push path
                                     
-            ac.intersectionsearch = True
-            ac.seperation = False
+            ac.intersectionsearch = True    #Turn on searching for intersections
+            ac.seperation = False           #Turn off seperation conditions (horizontal/vertical/diagonal)
 
         #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### ####
         '''
