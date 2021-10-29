@@ -147,7 +147,7 @@ nodes_dict, edges_dict, start_and_goal_locations = import_layout(nodes_file, edg
 graph = create_graph(nodes_dict, edges_dict, plot_graph)
 heuristics = calc_heuristics(graph, nodes_dict)
 
-aircraft_lst = []   #List which can contain aircraft agents
+
 
 if visualization:
     map_properties = map_initialization(nodes_dict, edges_dict) #visualization properties
@@ -165,6 +165,8 @@ t= 0
 next_ac_time = 0
 constraints = []
 node_lst = []  #list with tuples of goal and start nodes of each ac
+
+aircraft_lst = []   #List which can contain aircraft agents
 
 def ac_spawn(id,t):
 
