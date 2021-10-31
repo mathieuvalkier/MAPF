@@ -146,10 +146,10 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                     
                     #Hold diagonal distance
                     else:
-                        behind = False                              #Turn off: next condition is not valid for behind
-                        sep_dxy = sqrt(sep_dx**2 + sep_dy**2)       #Diagonal seperation distance
+                        behind = False                                                          #Turn off: next condition is not valid for behind
+                        sep_dxy = sqrt(sep_dx**2 + sep_dy**2)                                   #Diagonal seperation distance
                         if  (ac.heading + 90) == item[1] and close_next_node == ac.from_to[1]:
-                            diagonal = True                         #Turn on condition for a/c's heading to same intersection
+                            diagonal = True                                                     #Turn on condition for a/c's heading to same intersection
                         elif  (ac.heading - 90) == item[1] and close_next_node == ac.from_to[1]:
                             diagonal = True                         
                         elif ac.heading == 270 and item[1] == 0 and close_next_node == ac.from_to[1]:
@@ -301,6 +301,9 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
 
                 success, path = simple_single_agent_astar(nodes_dict, ac.from_to[0], ac.goal, heuristics, t, ac.id,
                                                           constraints, edges=temp_edges_dict)
+                
+                push_path(ac, path, t, print_path)      #Push path
+                
             else:
                 #If a/c already stands still, take old path => automatically take other a/c path
                 path = [(ac.from_to[0],ac.path_to_goal[0][1]-0.5)] + ac.path_to_goal
@@ -384,24 +387,24 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### ####
 
         # if ac.between and ac.crossingwait and ac.waiting == False:
-        #
+        
         #     constraints = []
         #     for i in range(2):
         #         for entry in nodes_dict[ac.from_to[0]]['neighbors']:
         #             constraints.append(
         #                 {'ac': ac.id,  # Add constraint for current ac
-        #                  'loc': [entry],
-        #                  'timestep': ac.path_to_goal[0][1] + 0.5 * i})  # +i
-        #
+        #                   'loc': [entry],
+        #                   'timestep': ac.path_to_goal[0][1] + 0.5 * i})  # +i
+        
         #     success, path_new = simple_single_agent_astar(nodes_dict, ac.from_to[0], ac.goal, heuristics, t, ac.id,
         #                                                   constraints)
-        #
+        
         #     push_path(ac, path, t)  # Push path
-        #
+        
         #     ac.intersectionsearch = True
         #     ac.crossingwait = False
         #     ac.waiting = True
-        #
+        
         # constraints = []
 
 
