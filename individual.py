@@ -14,9 +14,9 @@ def push_path(ac, path, t, print_path=True):
     if print_path:
         print("Path AC", ac.id, ":", path)
 
-    # Check the path
-    if path[0][1] != t:
-        raise Exception("Something is wrong with the timing of the path planning")
+    # # Check the path
+    # if path[0][1] != t:
+    #     raise Exception("Something is wrong with the timing of the path planning")
 
 def NESW(edges_dict, curr, nex, nesw):
     xys = edges_dict[(curr, nex)]['start_end_pos']
@@ -311,12 +311,13 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
             ac_v = aircraft_lst[ac.intersectionpriority[0]]
 
             if ac.path_to_goal == path[1:] or ac.previous == path[1][0]:    # If path is not possible
-                ac.intersectionpriority[2] = path                              # Set new path to empty
+                ac.intersectionpriority[2] = 0                              # Set new path to empty
 
                 if ac.intersectionpriority[1] == False and ac.id>ac_v.id:   # If a/c has no priority but no path
                     path = ac_v.intersectionpriority[2]                     # Take path of other a/c
 
-                    push_path(ac_v, path, t, print_path)  # Push path
+                    if path != 0:
+                        push_path(ac_v, path, t, print_path)  # Push path
 
                     ac_v.intersectionsearch = True  # New path means new upcoming intersections
             else:

@@ -14,6 +14,13 @@ from independent import run_independent_planner
 from prioritized import run_prioritized_planner
 from cbs import run_CBS
 
+import itertools as it
+from bisect import bisect_left
+from typing import List
+import scipy.stats as ss
+
+from pandas import Categorical
+
 
 def import_layout(nodes_file, edges_file):
     """
@@ -71,7 +78,8 @@ def import_layout(nodes_file, edges_file):
                            "to": row["to"],
                            "length": row["length"],
                            "weight": row["length"],
-                           "start_end_pos": start_end_pos
+                           "start_end_pos": start_end_pos,
+                           "count": 0
                            }
         edges_dict[edge_id] = edge_properties
 
@@ -83,9 +91,45 @@ def import_layout(nodes_file, edges_file):
 
     return nodes_dict, edges_dict, start_and_goal_locations
 
+
+def create_graph(nodes_dict, edges_dict, plot_graph=True):
+    """
+    Creates networkX graph based on nodes and edges and plots
+    INPUT:
+        - nodes_dict = dictionary with nodes and node properties
+        - edges_dict = dictionary with edges annd edge properties
+        - plot_graph = boolean (True/False) If True, function plots NetworkX graph. True by default.
+    RETURNS:
+        - graph = networkX graph object
+    """
+
+    graph = nx.DiGraph()  # create directed graph in NetworkX
+
+    # Add nodes and edges to networkX graph
+    for node in nodes_dict.keys():
+        graph.add_node(node,
+                       node_id=nodes_dict[node]["id"],
+                       xy_pos=nodes_dict[node]["xy_pos"],
+                       node_type=nodes_dict[node]["type"])
+
+    for edge in edges_dict.keys():
+        graph.add_edge(edge[0], edge[1],
+                       edge_id=edge,
+                       from_node=edges_dict[edge]["from"],
+                       to_node=edges_dict[edge]["to"],
+                       weight=edges_dict[edge]["length"])
+
+    # Plot networkX graph
+    if plot_graph:
+        plt.figure()
+        node_locations = nx.get_node_attributes(graph, 'xy_pos')
+        nx.draw(graph, node_locations, with_labels=True, node_size=100, font_size=10)
+
+    return graph
+
 nodes_file = "nodes.xlsx" #xlsx file with for each node: id, x_pos, y_pos, type
 edges_file = "edges.xlsx" #xlsx file with for each edge: from  (node), to (node), length
-nodes_dict, _, _ = import_layout(nodes_file, edges_file)
+nodes_dict, edges_dict, _ = import_layout(nodes_file, edges_file)
 
 ac = []
 total = []
@@ -93,7 +137,14 @@ total = []
 file = open('data.dat', 'r')
 for line in file.readlines():
     fname = line.rstrip().split(',') #using rstrip to remove the \n
-    total.append([float(i) for i in fname])
+    total.append([float(i) for i in fname[1::]])
+
+average_list = []
+
+file = open('data_average.dat', 'r')
+for line in file.readlines():
+    fname = line.rstrip().split(',') #using rstrip to remove the \n
+    average_list.append([float(i) for i in fname])
 
 for i in range(0,len(total),2):
     ac.append([total[i],total[i+1]])
@@ -104,7 +155,83 @@ for i in range(0,len(total),2):
 a = []
 for loc in ac[0][0]:
     a.append( nodes_dict[loc]["xy_pos"] )
-print(a)
 
-# for i in ac:
-#     print(i)
+
+#graph = create_graph(nodes_dict, edges_dict)
+
+for list_full in ac:
+
+    list = list_full[0]
+
+    for i in range(len(list)-1):
+
+        if list[i]==list[i+1]:
+            continue
+
+        edges_dict[(list[i],list[i+1])]['count'] +=1
+
+        # xcoords.append(nodes_dict[entry]['x_pos'])
+        # ycoords.append(nodes_dict[entry]['y_pos'])
+
+# for entry in edges_dict:
+#     xy = edges_dict[entry]["start_end_pos"]
+#
+#     print(xy)
+#     xc = [xy[0][0],xy[1][0]]
+#     yc = [xy[0][1],xy[1][1]]
+#     print(xc,yc)
+#
+#     plt.plot(xc, yc, 0.2, color='blue')
+#
+#
+# for entry in edges_dict:
+#     xy = edges_dict[entry]["start_end_pos"]
+#
+#     print(xy)
+#     xc = [xy[0][0],xy[1][0]]
+#     yc = [xy[0][1],xy[1][1]]
+#     print(xc,yc)
+#
+#     plt.plot(xc, yc, linewidth=edges_dict[entry]['count']*3, color = 'red')
+#
+#
+#
+# plt.show()
+
+
+def VD_A(treatment, control):
+    """
+    Computes Vargha and Delaney A index
+    A. Vargha and H. D. Delaney.
+    A critique and improvement of the CL common language
+    effect size statistics of McGraw and Wong.
+    Journal of Educational and Behavioral Statistics, 25(2):101-132, 2000
+    The formula to compute A has been transformed to minimize accuracy errors
+    See: http://mtorchiano.wordpress.com/2014/05/19/effect-size-of-r-precision/
+    :param treatment: a numeric list
+    :param control: another numeric list
+    :returns the value estimate and the magnitude
+    """
+    m = len(treatment)
+    n = len(control)
+
+    if m != n:
+        raise ValueError("Data d and f must have the same length")
+
+    r = ss.rankdata(treatment + control)
+    r1 = sum(r[0:m])
+
+    # Compute the measure
+    # A = (r1/m - (m+1)/2)/n # formula (14) in Vargha and Delaney, 2000
+    A = (2 * r1 - m * (m + 1)) / (2 * n * m)  # equivalent formula to avoid accuracy errors
+
+    levels = [0.147, 0.33, 0.474]  # effect sizes from Hess and Kromrey, 2004
+    magnitude = ["negligible", "small", "medium", "large"]
+    scaled_A = (A - 0.5) * 2
+
+    magnitude = magnitude[bisect_left(levels, abs(scaled_A))]
+    estimate = A
+
+    return estimate, magnitude
+
+print(VD_A(average_list[0:50], average_list[50:100]))
