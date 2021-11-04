@@ -85,7 +85,7 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
         #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### ####
         '''
         #### Maintaining separation
-        # IF both a/c's are taxiing on the same edge with the same heading and their seperation distance is < 0.5:
+        # IF both a/c's are taxiing on the same edge with the same heading and their seperation distance is <= 0.5:
         # => a/c behind waits for 1 timestep
         # IF 2 a/c's are heading to the same intersection and the diagonal distance between them is < 1:  
         # => a/c with lowest size waits for 1 timestep

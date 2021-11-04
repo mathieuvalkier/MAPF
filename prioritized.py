@@ -4,6 +4,8 @@ Implement prioritized planner here
 
 from single_agent_planner import simple_single_agent_astar
 import math
+import random
+random.seed(1)
 
 
 def run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints):

@@ -18,6 +18,8 @@ import itertools as it
 from bisect import bisect_left
 from typing import List
 import scipy.stats as ss
+import researchpy as rp
+from pylab import genfromtxt
 
 from pandas import Categorical
 
@@ -141,13 +143,23 @@ for line in file.readlines():
 
 average_list = []
 
-file = open('data_average.dat', 'r')
+
+file = open('average_prioritized.dat', 'r')
 for line in file.readlines():
     fname = line.rstrip().split(',') #using rstrip to remove the \n
     average_list.append([float(i) for i in fname])
 
 for i in range(0,len(total),2):
     ac.append([total[i],total[i+1]])
+    
+#Convert dat files to csv file
+df1 = pd.read_csv('data_average.dat', sep= 's\s+', engine='python' )
+df2 = pd.read_csv('average_cbs.dat', sep= 's\s+', engine='python' )
+df3 = pd.read_csv('average_prioritized.dat', sep= 's\s+', engine='python' )
+
+df_merged = pd.concat([df1,df2,df3], axis=1)
+df_merged.to_csv('average.csv', header=['Independent', 'CBS', 'Prioritized'])
+
 
 #Data is now available as: loc = ac[i][0], time = ac[i][1]
 
@@ -197,8 +209,49 @@ for list_full in ac:
 #
 #
 # plt.show()
+ 
+######## -- Normal distribution Boxplot
+plt.rcParams["figure.figsize"] = [7.00, 3.50]
+plt.rcParams["figure.autolayout"] = True
+
+independentdata = genfromtxt("data_average.dat")
+cbsdata = genfromtxt("average_cbs.dat")
+prioritizeddata = genfromtxt("average_prioritized.dat")
+# plt.plot(independentdata[0:40], label="test.txt Data")
+# plt.plot(cbsdata[0:40], label="test1.txt Data")
+
+data_time = [independentdata[0:100], cbsdata[0:40], prioritizeddata[0:100]]
+fig = plt.figure(figsize = (10,7))
+ax = fig.add_subplot(111)
+bp = ax.boxplot(data_time)
+
+ax.set_xticklabels(['Independent', 'Cbs', 'Prioritized'])
+plt.title("Average taxi time")
+plt.legend()
+plt.show()
 
 
+######## -- Independent T-test: = 2 GROUPS
+df_average = pd.read_csv('average.csv')
+ttest = rp.ttest(group1= df_average['Independent'], group1_name= "Independent",
+                 group2= df_average['Prioritized'], group2_name= "Prioritized")
+                 #group3= df_average['Prioritized'], group3_name= "Prioritized")
+summary, results = ttest
+print(summary)
+print(results)
+
+fig2 = plt.figure(figsize= (15, 7))
+ax = fig2.add_subplot(111)
+
+normality_plot, ss = ss.probplot(df_average['Independent'].values -\
+                                 df_average['Prioritized'].values, plot= plt, rvalue=True)
+ax.set_title("Probability average taxi time", fontsize= 20)
+ax.set
+plt.show()
+
+
+
+######## -- A-test
 def VD_A(treatment, control):
     """
     Computes Vargha and Delaney A index
@@ -235,3 +288,10 @@ def VD_A(treatment, control):
     return estimate, magnitude
 
 print(VD_A(average_list[0:50], average_list[50:100]))
+
+
+
+
+
+
+

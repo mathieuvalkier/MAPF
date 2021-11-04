@@ -22,7 +22,7 @@ import csv
 
 #Parameters that can be changed:
 simulation_time = 30
-planner = 'Independent'  #'CBS'#'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
+planner = 'Prioritized'  #'CBS'#'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
 
 #Visualization
 plot_graph = False          #show graph representation in NetworkX
@@ -251,6 +251,7 @@ def main_loop(random_id, print_path):
     # Save path data to data.dat file
     paths = []
     length = []
+    #taxi_time = []
     for ac in aircraft_lst:
 
         path = ac.actualpath
@@ -267,22 +268,32 @@ def main_loop(random_id, print_path):
 
         paths.append(loc)
         paths.append(time)
-
+    
+    #Average taxi time
     size, count = 0,0
     for entry in length:
         count +=1
         size  += entry
     average = size/count
-
+    
 
     with open('data.dat', 'a', newline='') as student_file:
         writer = csv.writer(student_file)
         for entry in paths:
             writer.writerow(entry)
-
-    with open('data_average.dat', 'a', newline='') as student_file:
-        writer = csv.writer(student_file)
-        writer.writerow([average])
+    
+    if planner == 'Independent':    
+        with open('data_average.dat', 'a', newline='') as student_file:
+            writer = csv.writer(student_file)
+            writer.writerow([average])
+    elif planner == 'CBS':    
+        with open('average_cbs.dat', 'a', newline='') as student_file:
+            writer = csv.writer(student_file)
+            writer.writerow([average])
+    elif planner == 'Prioritized':
+        with open('average_prioritized.dat', 'a', newline='') as student_file:
+            writer = csv.writer(student_file)
+            writer.writerow([average])
 
 
 for i in range(100):
