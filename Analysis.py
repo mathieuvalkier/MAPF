@@ -211,46 +211,48 @@ for list_full in ac:
 # plt.show()
  
 ######## -- Normal distribution Boxplot
-plt.rcParams["figure.figsize"] = [7.00, 3.50]
-plt.rcParams["figure.autolayout"] = True
+# plt.rcParams["figure.figsize"] = [7.00, 3.50]
+# plt.rcParams["figure.autolayout"] = True
 
-independentdata = genfromtxt("data_average.dat")
-cbsdata = genfromtxt("average_cbs.dat")
-prioritizeddata = genfromtxt("average_prioritized.dat")
-# plt.plot(independentdata[0:40], label="test.txt Data")
-# plt.plot(cbsdata[0:40], label="test1.txt Data")
+# independentdata = genfromtxt("data_average.dat")
+# cbsdata = genfromtxt("average_cbs.dat")
+# prioritizeddata = genfromtxt("average_prioritized.dat")
+# # plt.plot(independentdata[0:40], label="test.txt Data")
+# # plt.plot(cbsdata[0:40], label="test1.txt Data")
 
-data_time = [independentdata[0:100], cbsdata[0:40], prioritizeddata[0:100]]
-fig = plt.figure(figsize = (10,7))
-ax = fig.add_subplot(111)
-bp = ax.boxplot(data_time, showmeans=True)
+# data_time = [independentdata[0:100], cbsdata[0:40], prioritizeddata[0:100]]
+# fig = plt.figure(figsize = (10,7))
+# ax = fig.add_subplot(111)
+# bp = ax.boxplot(data_time, showmeans=True)
 
-ax.set_xticklabels(['Independent', 'Cbs', 'Prioritized'])
-plt.title("Boxplot average taxi time")
-plt.ylabel("Average taxi time [sec]")
-plt.xlabel("Planning methods")
-plt.legend()
-plt.show()
+# ax.set_xticklabels(['Independent', 'Cbs', 'Prioritized'])
+# plt.title("Boxplot average taxi time")
+# plt.ylabel("Average taxi time [sec]")
+# plt.xlabel("Planning methods")
+# plt.legend()
+# plt.show()
 
 
 ######## -- Independent T-test: = 2 GROUPS
-df_average = pd.read_csv('average.csv')
-ttest = rp.ttest(group1= df_average['Independent'], group1_name= "Independent",
-                 group2= df_average['Prioritized'], group2_name= "Prioritized")
-                 #group3= df_average['Prioritized'], group3_name= "Prioritized")
-summary, results = ttest
-print(summary)
-print(results)
+def T_test():
+    df_average = pd.read_csv('average.csv')
+    ttest = rp.ttest(group1= df_average['Independent'][0:50], group1_name= "Independent",
+                     group2= df_average['Independent'][50:100], group2_name= "Prioritized")
+                     #group3= df_average['Prioritized'], group3_name= "Prioritized")
+    summary, results = ttest
+    print(summary)
+    print(results)
+    
+    fig2 = plt.figure(figsize= (15, 7))
+    ax = fig2.add_subplot(111)
+    
+    normality_plot, ssi = ss.probplot(df_average['Independent'].values -\
+                                     df_average['Prioritized'].values, plot= plt, rvalue=True)
+    ax.set_title("Probability average taxi time", fontsize= 20)
+    ax.set
+    plt.show()
 
-fig2 = plt.figure(figsize= (15, 7))
-ax = fig2.add_subplot(111)
-
-normality_plot, ssi = ss.probplot(df_average['Independent'].values -\
-                                 df_average['Prioritized'].values, plot= plt, rvalue=True)
-ax.set_title("Probability average taxi time", fontsize= 20)
-ax.set
-plt.show()
-
+T_test()
 
 
 ######## -- A-test
