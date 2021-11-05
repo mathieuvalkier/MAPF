@@ -56,7 +56,7 @@ def run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t,
 
                 if new_constraint == False:
                     colliding = False
-
+ 
             if success is False:
                 print('no path found for', ac.id)
                 ac.status = 'Fail'

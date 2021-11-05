@@ -223,10 +223,12 @@ prioritizeddata = genfromtxt("average_prioritized.dat")
 data_time = [independentdata[0:100], cbsdata[0:40], prioritizeddata[0:100]]
 fig = plt.figure(figsize = (10,7))
 ax = fig.add_subplot(111)
-bp = ax.boxplot(data_time)
+bp = ax.boxplot(data_time, showmeans=True)
 
 ax.set_xticklabels(['Independent', 'Cbs', 'Prioritized'])
-plt.title("Average taxi time")
+plt.title("Boxplot average taxi time")
+plt.ylabel("Average taxi time [sec]")
+plt.xlabel("Planning methods")
 plt.legend()
 plt.show()
 
