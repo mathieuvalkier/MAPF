@@ -144,10 +144,10 @@ for line in file.readlines():
 average_list = []
 
 
-file = open('average_prioritized.dat', 'r')
+file = open('average_cbs.dat', 'r')
 for line in file.readlines():
     fname = line.rstrip().split(',') #using rstrip to remove the \n
-    average_list.append([float(i) for i in fname])
+    average_list.append([float(i) for i in fname][0])
 
 for i in range(0,len(total),2):
     ac.append([total[i],total[i+1]])
@@ -245,7 +245,7 @@ print(results)
 fig2 = plt.figure(figsize= (15, 7))
 ax = fig2.add_subplot(111)
 
-normality_plot, ss = ss.probplot(df_average['Independent'].values -\
+normality_plot, ssi = ss.probplot(df_average['Independent'].values -\
                                  df_average['Prioritized'].values, plot= plt, rvalue=True)
 ax.set_title("Probability average taxi time", fontsize= 20)
 ax.set
@@ -270,6 +270,8 @@ def VD_A(treatment, control):
     m = len(treatment)
     n = len(control)
 
+    print('len', m, n)
+
     if m != n:
         raise ValueError("Data d and f must have the same length")
 
@@ -288,6 +290,8 @@ def VD_A(treatment, control):
     estimate = A
 
     return estimate, magnitude
+
+print('list', average_list)
 
 print(VD_A(average_list[0:50], average_list[50:100]))
 

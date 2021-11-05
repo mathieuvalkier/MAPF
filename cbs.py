@@ -257,9 +257,9 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
                 {'ac': ac.id,  # Add constraint for current ac
                  'loc': [ac.previous],
                  'timestep': t + 0.5})
-            print({'ac': ac.id,  # Add constraint for current ac
-                 'loc': [ac.previous],
-                 'timestep': t + 0.5})
+            # print({'ac': ac.id,  # Add constraint for current ac
+            #      'loc': [ac.previous],
+            #      'timestep': t + 0.5})
             constraints.append(backward)
 
         #make lists: starts, goals, time_starts, agent_ids
@@ -316,7 +316,7 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
                 aclist.path_to_goal = path[1:]
                 next_node_id = aclist.path_to_goal[0][0]  # next node is first node in path_to_goal
                 aclist.from_to = [path[0][0], next_node_id]
-                print("Path AC", aclist.id, ":", path)
+                # print("Path AC", aclist.id, ":", path)
 
             # for id, ac_2 in enumerate(aircraft_lst):
             #

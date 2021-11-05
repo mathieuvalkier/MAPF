@@ -22,7 +22,7 @@ import csv
 
 #Parameters that can be changed:
 simulation_time = 30
-planner = 'Prioritized'  #'CBS'#'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
+planner = 'CBS'  #'CBS'#'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
 
 #Visualization
 plot_graph = False          #show graph representation in NetworkX
@@ -296,10 +296,10 @@ def main_loop(random_id, print_path):
             writer.writerow([average])
 
 
-for i in range(100):
+for i in range(102,108):
     # Run main loop
 
-    exclude = []#[10, 13]
+    exclude = [15,37,39,42,65,77,100,101,]#[10, 13]
 
     if i in exclude:
         print('skipping: ', i)
