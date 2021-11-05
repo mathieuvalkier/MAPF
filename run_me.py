@@ -22,7 +22,7 @@ import csv
 
 #Parameters that can be changed:
 simulation_time = 30
-planner = 'CBS'  #'CBS'#'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
+planner = 'Individual'  #'CBS'#'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
 
 #Visualization
 plot_graph = False          #show graph representation in NetworkX
@@ -199,7 +199,7 @@ def main_loop(random_id, print_path):
             spawn_t = 0
         else:
             new_id = aircraft_lst[-1].id + 1
-            spawn_t = aircraft_lst[-1].spawntime + random.choice([0.5,1.0,1.5])
+            spawn_t = aircraft_lst[-1].spawntime + random.choice([0.5,1.0,1.5])  #low:[0.5,1.0,1.5] #high:[0,0.5,1.0]
 
         ac_spawn(new_id,spawn_t)
 
@@ -207,7 +207,7 @@ def main_loop(random_id, print_path):
     while running:
         t= round(t,2)
 
-        #Check conditions for termination
+        #Check conditions for termination  
         if t >= time_end or escape_pressed:
             running = False
             pg.quit()
@@ -294,12 +294,17 @@ def main_loop(random_id, print_path):
         with open('average_prioritized.dat', 'a', newline='') as student_file:
             writer = csv.writer(student_file)
             writer.writerow([average])
+    elif planner == 'Individual':
+        with open('average_individual.dat', 'a', newline='') as student_file:
+            writer = csv.writer(student_file)
+            writer.writerow([average])
+    
 
 
-for i in range(102,108):
+for i in range(100):
     # Run main loop
 
-    exclude = [15,37,39,42,65,77,100,101,]#[10, 13]
+    exclude = [] #cbsoud[15,37,39,42,65,77,100,101,]
 
     if i in exclude:
         print('skipping: ', i)

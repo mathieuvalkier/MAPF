@@ -6,7 +6,7 @@ import random
 random.seed(1)
 
 
-def push_path(ac, path, t, print_path=True):
+def push_path(ac, path, t, print_path=False):
     ac.path_to_goal = path[1:]
     next_node_id = ac.path_to_goal[0][0]
     ac.from_to = [path[0][0], next_node_id]
