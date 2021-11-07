@@ -144,7 +144,7 @@ for line in file.readlines():
 average_list = []
 
 
-file = open('average_cbs.dat', 'r')
+file = open('average_individual.dat', 'r')
 for line in file.readlines():
     fname = line.rstrip().split(',') #using rstrip to remove the \n
     average_list.append([float(i) for i in fname][0])
