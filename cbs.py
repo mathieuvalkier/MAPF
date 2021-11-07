@@ -7,6 +7,7 @@ import math
 import heapq
 import random
 random.seed(1)
+import time as timer
 
 def get_location(path, time):
     if time < 0:
@@ -89,7 +90,7 @@ def get_sum_of_cost(paths):
 class CBSSolver(object):
     """The high-level search of CBS."""
 
-    def __init__(self, starts, goals, heuristics, nodes_dict,time_start, agent_id, currents, constraint):
+    def __init__(self, starts, goals, heuristics, nodes_dict,time_start, agent_id, agent_size, currents, constraint, previous):
         """my_map   - list of lists specifying obstacle positions
         starts      - [(x1, y1), (x2, y2), ...] list of start locations
         goals       - [(x1, y1), (x2, y2), ...] list of goal locations
@@ -98,9 +99,11 @@ class CBSSolver(object):
         self.nodes_dict = nodes_dict
         self.starts = starts
         self.goals = goals
+        self.previous = previous
         self.num_of_agents = len(goals)
         self.start_times = time_start
         self.agent_ids = agent_id
+        self.size = agent_size
         self.currents = currents
         self.constraint = constraint
 
@@ -145,32 +148,21 @@ class CBSSolver(object):
         for i in range(self.num_of_agents):  # Find initial path for each agent
 
             root['constraints'] = list(self.constraint[i])
-            # path = a_star(self.my_map, self.starts[i], self.goals[i], self.heuristics[i],
-            #               i, root['constraints'])
+
             success, path = simple_single_agent_astar(self.nodes_dict, self.starts[i], self.goals[i], self.heuristics,
-                                             self.start_times[i], self.agent_ids[i], root['constraints'])
+                                             self.start_times[i], self.agent_ids[i], root['constraints'], prev= self.previous[i])
 
-            if path is None:
-                raise BaseException('No solutions')
+            #if not success:
+            #    raise BaseException('No solutions')
 
-            # print(self.agent_ids[i], path, self.currents[i])
-
-            # if self.currents[i] != -1:
-            #     root['paths'].append([self.currents[i]] + path)
-            # else:
             root['paths'].append(path)
 
         root['cost'] = get_sum_of_cost(root['paths'])
         root['collisions'] = detect_collisions(root['paths'],self.agent_ids)
         self.push_node(root)
 
-        # Task 3.1: Testing
-        #print(root['collisions'])
+        start_time = timer.time()
 
-        # Task 3.2: Testing
-        #for collision in root['collisions']:
-            #print(standard_splitting(collision))
-            #print('root',collision)
 
         while len(self.open_list) > 0:
 
@@ -178,14 +170,19 @@ class CBSSolver(object):
             parent = self.pop_node()
 
             if len(parent['collisions']) == 0:
-                # print('parent', parent['paths'])
                 return parent['paths']
 
-
             constraints = standard_splitting(parent['collisions'][0])
-            #print('const', constraints)
+
+            a,b = constraints[0]['ac'],constraints[1]['ac']
+            c,d= self.agent_ids.index(a),self.agent_ids.index(b)
+            e,f = self.size[c], self.size[d]
+
+            if (e<f and self.agent_ids[-1] !=d) or self.agent_ids[-1] ==c :
+                constraints = constraints[::-1]
 
             for constraint in constraints:
+
 
                 #get the previous constraints and add new constraint
                 constraintlist =  list(parent['constraints'])
@@ -198,37 +195,36 @@ class CBSSolver(object):
                         'paths': parent['paths'],
                         'collisions': []}
 
-
-
-                # print('ai', ai, self.agent_ids[ai])
-
-
-                # path = a_star(self.my_map, self.starts[ai], self.goals[ai], self.heuristics[ai],
-                #               ai, child['constraints'])
-
                 success, path = simple_single_agent_astar(self.nodes_dict, self.starts[ai], self.goals[ai], self.heuristics,
-                                                 self.start_times[ai], self.agent_ids[ai], child['constraints'])
+                                                 self.start_times[ai], self.agent_ids[ai], child['constraints'], prev=self.previous[ai])
 
-
-                if path != None:
-                    # if self.currents[ai] != -1:
-                    #     child['paths'][ai] = [self.currents[ai]] + path
-                    # else:
+                if success:
                     child['paths'][ai] = path
                     child['collisions'] = detect_collisions(child['paths'],self.agent_ids)
                     child['cost'] = get_sum_of_cost(child['paths'])
                     self.push_node(child)
 
+                if not success:
+                    child['paths'][ai] = []
+                    child['collisions'] = detect_collisions(child['paths'], self.agent_ids)
+                    child['cost'] = get_sum_of_cost(child['paths'])
+                    self.push_node(child)
+
+
+
+
+
         return root['paths']
 
 
 def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
-    #raise Exception("CBS not defined yet.")
 
     starts = []
     goals = []
+    previous = []
     time_starts = []
     agent_ids = []
+    agent_size = []
     currents = []
     constraints = []
     lock = []
@@ -240,8 +236,10 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
         if ac.status == "taxiing":
             starts.append(ac.from_to[0])#path_to_goal[0][0])
             goals.append(ac.goal)
+            previous.append(ac.previous)
             time_starts.append(t) #Need to finish current movement first
             agent_ids.append(ac.id)
+            agent_size.append(ac.size)
             currents.append((ac.from_to[0],t))
             lock.append([ac.goal, len(ac.path_to_goal)])
 
@@ -257,26 +255,22 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
                 {'ac': ac.id,  # Add constraint for current ac
                  'loc': [ac.previous],
                  'timestep': t + 0.5})
-            # print({'ac': ac.id,  # Add constraint for current ac
-            #      'loc': [ac.previous],
-            #      'timestep': t + 0.5})
             constraints.append(backward)
 
         #make lists: starts, goals, time_starts, agent_ids
 
         if ac.spawntime == t:
 
-
-
             starts.append(ac.start)
             goals.append(ac.goal)
+            previous.append(ac.previous)
             time_starts.append(t)
             agent_ids.append(ac.id)
+            agent_size.append(ac.size)
             currents.append(-1)
             constraints.append([])
 
             for loc in lock:
-                # print('lock', loc[0], loc[1])
                 if ac.start == loc[0] and loc[1]<3:
                     starts.pop()
                     start_node = ac.start
@@ -286,28 +280,14 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
                     starts.append(start_node)
                     ac.start = start_node
 
-
-
-            # print('start',starts)
-
             ac.status = "taxiing"
             ac.position = nodes_dict[ac.start]["xy_pos"]
 
-            cbs = CBSSolver(starts, goals, heuristics, nodes_dict,time_starts, agent_ids, currents, constraints)
+
+            cbs = CBSSolver(starts, goals, heuristics, nodes_dict,time_starts, agent_ids, agent_size, currents, constraints, previous)
             paths = cbs.find_solution()
 
-            # print('hier', paths)
-
-
-
-            # print('path list')
-            # for path in paths:
-            #     print(path)
-
             for ids, path in enumerate(paths):
-                # print('paths', path)
-
-
 
                 aclist = aircraft_lst[agent_ids[ids]]
                 if len(path) == 0:
@@ -316,23 +296,6 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
                 aclist.path_to_goal = path[1:]
                 next_node_id = aclist.path_to_goal[0][0]  # next node is first node in path_to_goal
                 aclist.from_to = [path[0][0], next_node_id]
-                # print("Path AC", aclist.id, ":", path)
-
-            # for id, ac_2 in enumerate(aircraft_lst):
-            #
-            #     ai = self.agent_ids.index(constraint['ac'])
-            #
-            #     ac_2.path_to_goal = paths[id][1:]
-            #     next_node_id = ac_2.path_to_goal[0][0]  # next node is first node in path_to_goal
-            #     ac_2.from_to = [paths[id][0][0], next_node_id]
-            #     print("Path AC", ac_2.id, ":", paths[id])
-            #     #ac_2.path_total = path
-
-            #Update paths for all aircraft
-
-
-
-
 
     return
 

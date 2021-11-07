@@ -92,11 +92,7 @@ def is_constrained(curr_loc, next_loc, next_time, constraint_table,agent):
         return False
 
 
-def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time_start, agent=0, constraints=[], edges = 0):
-    # def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
-
-    #print('agent', agent)
-    #print('dit', from_node, goal_node, time_start, agent, constraints)
+def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time_start, agent=0, constraints=[], edges = 0, prev=None):
 
 
     """
@@ -115,78 +111,85 @@ def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time
 
     constraint_table, maxtimestep = build_constraint_table(constraints, agent)  # list of constraints
 
-    #print('starttime', time_start)
-    # print('table',agent,  constraint_table)
-
-    # def directions(parent):
-    #     for neighbor in nodes_dict[curr['loc']]["neighbors"]:
-    #         if
-    #         directions.append(neighbor)
-
     
     from_node_id = from_node
     goal_node_id = goal_node
     time_start = time_start
+    previous_node = prev
 
-    previous_node = 0
     
     open_list = []
     closed_list = dict()
     earliest_goal_timestep = time_start
     h_value = heuristics[from_node_id][goal_node_id]
-    root = {'loc': from_node_id, 'g_val': 0, 'h_val': h_value, 'parent': None, 'timestep': time_start, 'previous': None}
-    push_node(open_list, root,)
-    closed_list[(root['loc'], root['timestep'])] = root
+    root = {'loc': from_node_id, 'g_val': 0, 'h_val': h_value, 'parent': None, 'timestep': time_start, 'previous': previous_node, 'remain':0}
 
     nummer = 1
+    push_node(open_list, root, nummer)
+    closed_list[(root['loc'], root['timestep'])] = root
 
-    while len(open_list) > 0:
+    remain = root['remain']
+
+
+    while len(open_list) > 0: #remain<5
+
+
+
         nummer = nummer + 1
         curr = pop_node(open_list)
+
+        remain = curr['remain']
+
         if curr['loc'] == goal_node_id and curr['timestep'] >= earliest_goal_timestep:
             return True, get_path(curr)
 
-        for neighbor in nodes_dict[curr['loc']]["neighbors"]:
-            if edges == 0:
+        possibles = [curr['loc']]
+        for entry in nodes_dict[curr['loc']]["neighbors"]:
+            possibles.append(entry)
+
+        if curr['previous'] in possibles: possibles.remove(curr['previous'])
+
+
+        for neighbor in possibles:
+
+            if edges == 0 or curr['loc'] == neighbor:
                 weight = 0.5
             else:
                 weight = edges[(curr['loc'], neighbor)]['weight']
+
             child = {'loc': neighbor,
                     'g_val': curr['g_val'] + weight,#+ 0.5,
                     'h_val': heuristics[neighbor][goal_node_id],
                     'parent': curr,
                     'timestep': curr['timestep'] + 0.5,
-                    'previous': curr['loc']}
+                    'previous': curr['previous'],
+                    'remain': curr['remain']}
 
-            if child['loc'] == curr['previous']:
-                continue
 
             if is_constrained(curr['loc'], child['loc'], child['timestep']  ,
                               constraint_table, agent) == True:
-                #print('const gezien')
                 continue
 
             if (child['loc'], child['timestep']) in closed_list:
                 existing_node = closed_list[(child['loc'], child['timestep'])]
                 if compare_nodes(child, existing_node):
+                    if child['loc'] != curr['loc']:
+                        child['previous'] = curr['loc']
+                        child['remain'] = 0
+                    else:
+                        child['remain'] +=1
                     closed_list[(child['loc'], child['timestep'])] = child
                     push_node(open_list, child,nummer)
+
+
             else:
+                if child['loc'] != curr['loc']:
+                    child['previous'] = curr['loc']
+                    child['remain'] = 0
+                else:
+                    child['remain'] +=1
                 closed_list[(child['loc'], child['timestep'])] = child
                 push_node(open_list, child,nummer)
-
-        #Stay at location if other options are not possible
-        child = {'loc': curr['loc'],
-                     'g_val': curr['g_val'] + 0.5,
-                     'h_val': heuristics[curr['loc']][goal_node_id],
-                     'parent': curr,
-                     'timestep': curr['timestep'] + 0.5,
-                     'previous': curr['previous']}
-        if is_constrained(curr['loc'], child['loc'], child['timestep'],
-                          constraint_table, agent) == True:
-            continue
-        closed_list[(child['loc'], child['timestep'])] = child
-        push_node(open_list, child,nummer)
 
 
     print("No path found, "+str(len(closed_list))+" nodes visited")

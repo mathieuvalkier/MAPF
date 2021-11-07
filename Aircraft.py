@@ -55,6 +55,8 @@ class Aircraft(object):
         self.replan_inter = False
         self.previous = 0
 
+        self.sideside = [False]
+
         self.crossingwait = False
         self.between = False
         self.waiting = False
@@ -148,7 +150,8 @@ class Aircraft(object):
                 if new_from_id != self.from_to[0]:
                     self.last_node = self.from_to[0]
 
-                self.previous = self.from_to[0]
+                if self.from_to[0] != self.from_to[1]:
+                    self.previous = self.from_to[0]
                 
                 self.from_to = [new_from_id, new_next_id] #update new from and to node
 
@@ -176,14 +179,14 @@ class Aircraft(object):
                 #find upcoming intersections ac will follow
         if self.intersectionsearch:
             intersectlist = []
-            #if self.nodes_dict[self.from_to[0]]['type'] == 'intersection':
-            intersectlist.append(self.from_to[0])
-            #print(self.id, 'intersect')
+            if self.nodes_dict[self.from_to[0]]['type'] != 'between':
+                intersectlist.append(self.from_to[0])
+            else:
+                intersectlist.append(self.intersections[0])
             for loc in self.path_to_goal:
-                if self.nodes_dict[loc[0]]['type'] == 'intersection':
+                if self.nodes_dict[loc[0]]['type'] != 'between':
                     intersectlist.append(loc[0])
             self.intersections = list(intersectlist[0:3])
-            # print('int', self.id, self.intersections)
             self.intersectionsearch = False
 
         # print(self.id, self.intersections)
@@ -210,7 +213,7 @@ class Aircraft(object):
                 self.path_to_goal = path[1:]
                 next_node_id = self.path_to_goal[0][0] #next node is first node in path_to_goal
                 self.from_to = [path[0][0], next_node_id]
-                print("Path AC", self.id, ":", path)
+                # print("Path AC", self.id, ":", path)
             else:
                 raise Exception("No solution found for", self.id)
             

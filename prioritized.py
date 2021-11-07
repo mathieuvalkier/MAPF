@@ -33,7 +33,7 @@ def run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t,
             colliding = True
             while colliding:
 
-                success, path = simple_single_agent_astar(nodes_dict, ac.start, ac.goal, heuristics, t, ac.id, constraints)
+                success, path = simple_single_agent_astar(nodes_dict, ac.start, ac.goal, heuristics, t, ac.id, constraints, prev=ac.previous)
 
                 if ac.id == 0:    #This is for the first ac, always priority
                     colliding = False
