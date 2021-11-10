@@ -141,8 +141,9 @@ for line in file.readlines():
     fname = line.rstrip().split(',') #using rstrip to remove the \n
     total.append([float(i) for i in fname[1::]])
 
-average_list = []
 
+
+average_list = []
 
 file = open('average_individual.dat', 'r')
 for line in file.readlines():
@@ -161,15 +162,13 @@ df_merged = pd.concat([df1,df2,df3], axis=1)
 df_merged.to_csv('average.csv', header=['Independent', 'CBS', 'Prioritized'])
 
 
-#Data is now available as: loc = ac[i][0], time = ac[i][1]
-
 #Nu krijg je de xy locaties van aircraft 1
 a = []
 for loc in ac[0][0]:
     a.append( nodes_dict[loc]["xy_pos"] )
 
 
-#graph = create_graph(nodes_dict, edges_dict)
+
 
 for list_full in ac:
 
@@ -185,30 +184,36 @@ for list_full in ac:
         # xcoords.append(nodes_dict[entry]['x_pos'])
         # ycoords.append(nodes_dict[entry]['y_pos'])
 
-# for entry in edges_dict:
-#     xy = edges_dict[entry]["start_end_pos"]
-#
-#     print(xy)
-#     xc = [xy[0][0],xy[1][0]]
-#     yc = [xy[0][1],xy[1][1]]
-#     print(xc,yc)
-#
-#     plt.plot(xc, yc, 0.2, color='blue')
-#
-#
-# for entry in edges_dict:
-#     xy = edges_dict[entry]["start_end_pos"]
-#
-#     print(xy)
-#     xc = [xy[0][0],xy[1][0]]
-#     yc = [xy[0][1],xy[1][1]]
-#     print(xc,yc)
-#
-#     plt.plot(xc, yc, linewidth=edges_dict[entry]['count']*3, color = 'red')
-#
-#
-#
-# plt.show()
+
+
+#graph = create_graph(nodes_dict, edges_dict)
+
+
+for entry in edges_dict:
+    xy = edges_dict[entry]["start_end_pos"]
+
+    print(xy)
+    xc = [xy[0][0],xy[1][0]]
+    yc = [xy[0][1],xy[1][1]]
+    print(xc,yc)
+
+    plt.scatter(xc, yc, 20, color='blue')
+    plt.plot(xc, yc, linewidth=edges_dict[entry]['count']*3, color = 'red')
+
+
+for entry in edges_dict:
+    xy = edges_dict[entry]["start_end_pos"]
+
+    print(xy)
+    xc = [xy[0][0],xy[1][0]]
+    yc = [xy[0][1],xy[1][1]]
+    print(xc,yc)
+
+
+
+
+
+plt.show()
  
 ######## -- Normal distribution Boxplot
 # plt.rcParams["figure.figsize"] = [7.00, 3.50]
@@ -252,7 +257,7 @@ def T_test():
     ax.set
     plt.show()
 
-T_test()
+#T_test()
 
 
 ######## -- A-test
@@ -293,9 +298,9 @@ def VD_A(treatment, control):
 
     return estimate, magnitude
 
-print('list', average_list)
+#print('list', average_list)
 
-print(VD_A(average_list[0:50], average_list[50:100]))
+#print(VD_A(average_list[0:50], average_list[50:100]))
 
 
 

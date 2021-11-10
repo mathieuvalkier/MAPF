@@ -22,7 +22,8 @@ import csv
 
 #Parameters that can be changed:
 simulation_time = 30
-planner = 'Independent'  #'CBS'#'#"Prioritized"#"Independent" #choose which planner to use (currently only Independent is implemented)
+planner = 'Independent' # Choose which planner to use (currently only Independent is implemented)
+high_demand  = False     # Demand situation, False => normal demand
 
 #Visualization
 plot_graph = False          #show graph representation in NetworkX
@@ -166,7 +167,7 @@ def main_loop(random_id, print_path, start_time):
     time_end = simulation_time
     random.seed(random_id)
     dt = 0.1 #0.1 #should be factor of 0.5 (0.5/dt should be integer)
-    t= 0
+    t = 0
     next_ac_time = 0
     constraints = []
     node_lst = []  #list with tuples of goal and start nodes of each ac
@@ -196,6 +197,10 @@ def main_loop(random_id, print_path, start_time):
         aircraft_lst.append(ac)
 
 
+    time_difference = [0.5,1.0,1.5]
+    if high_demand:
+        time_difference = [0.5,0.5,1.0]
+
 
     for i in range(40):
         if len(aircraft_lst) == 0:
@@ -203,7 +208,7 @@ def main_loop(random_id, print_path, start_time):
             spawn_t = 0
         else:
             new_id = aircraft_lst[-1].id + 1
-            spawn_t = aircraft_lst[-1].spawntime + random.choice([0.5,0.5,1.0])#[0.5,1.0,1.5]) #[0,0.5,1.0]
+            spawn_t = aircraft_lst[-1].spawntime + random.choice(time_difference)
 
         ac_spawn(new_id,spawn_t)
 
@@ -233,12 +238,11 @@ def main_loop(random_id, print_path, start_time):
 
         #Do planning
         if planner == "Independent":
-            #if t == 1: #(Hint: Think about the condition that triggers (re)planning)
-            run_independent_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t)
+            run_independent_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, print_path)
         elif planner == "Prioritized":
-            constraints = run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints)
+            run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, print_path)
         elif planner == "CBS":
-            run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t)
+            run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t, print_path)
         elif planner == "Individual":
             run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints, print_path)
         #elif planner == -> you may introduce other planners here
@@ -253,43 +257,35 @@ def main_loop(random_id, print_path, start_time):
         t = t + dt
 
     # # Save path data to data.dat file
-    # paths = []
+    paths = []
     length = []
-    # #taxi_time = []
+
     for ac in aircraft_lst:
 
         path = ac.actualpath
         if ac.status == 'taxiing' or len(path)<1:
             continue
-    #
-    #     loc = ['l']
-    #     time = ['t']
+
+        loc = ['l']
+        time = ['t']
         length.append(len(path))
-    #     for entry in path:
-    #         loc.append(entry[0])
-    #         time.append(entry[1])
-    #
-    #
-    #     paths.append(loc)
-    #     paths.append(time)
+        for entry in path:
+            loc.append(entry[0])
+            time.append(entry[1])
+
+
+        paths.append(loc)
+        paths.append(time)
 
     stdev = np.std(length)
     mean  = np.average(length)
     comp_t = timer.time()-start_time
 
-    
-    # #Average taxi time
-    # size, count = 0,0
-    # for entry in length:
-    #     count +=1
-    #     size  += entry
-    # average = size/count
-    
 
-    # with open('data.dat', 'a', newline='') as student_file:
-    #     writer = csv.writer(student_file)
-    #     for entry in paths:
-    #         writer.writerow(entry)
+    with open('data.dat', 'a', newline='') as student_file:
+        writer = csv.writer(student_file)
+        for entry in paths:
+            writer.writerow(entry)
     
     if planner == 'Independent':    
         with open('average_independent.dat', 'a', newline='') as student_file:
@@ -308,14 +304,11 @@ def main_loop(random_id, print_path, start_time):
             writer = csv.writer(student_file)
             writer.writerow([mean,stdev,comp_t])
 
-i = 0
-while i<100:
-#for i in range(5,100):
-    # Run main loop
 
+i = 1
+while i<2:
 
-
-    exclude = []#[2,4,5,7]#[1,4,5,6,15,25,26,30,31,33,34,41]#[15,37,39,42,65,77,100,101,]#[10, 13]
+    exclude = []
 
     start_t = timer.time()
 
@@ -327,14 +320,3 @@ while i<100:
 
     i += 1
 
-
-
-# with open('data.dat', 'r', newline='') as student_file:
-#     writer = csv.writer(student_file)
-#     for entry in paths:
-#         writer.writerow(entry)
-
-          
-# =============================================================================
-# 2. Implement analysis of output data here
-# =============================================================================

@@ -189,12 +189,10 @@ class Aircraft(object):
             self.intersections = list(intersectlist[0:3])
             self.intersectionsearch = False
 
-        # print(self.id, self.intersections)
-
         self.vision = []
         return
 
-    def plan_independent(self, nodes_dict, edges_dict, heuristics, t):
+    def plan_independent(self, nodes_dict, edges_dict, heuristics, t, print_path=False):
         """
         Plans a path for taxiing aircraft assuming that it knows the entire layout.
         Other traffic is not taken into account.
@@ -208,12 +206,13 @@ class Aircraft(object):
             goal_node = self.goal #node to which planning should be done
             
             success, path = simple_single_agent_astar(nodes_dict, start_node, goal_node, heuristics, t)
-            #print('path',path)
+
             if success:
                 self.path_to_goal = path[1:]
                 next_node_id = self.path_to_goal[0][0] #next node is first node in path_to_goal
                 self.from_to = [path[0][0], next_node_id]
-                # print("Path AC", self.id, ":", path)
+                if print_path:
+                    print("Path AC", self.id, ":", path)
             else:
                 raise Exception("No solution found for", self.id)
             

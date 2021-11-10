@@ -92,7 +92,8 @@ def is_constrained(curr_loc, next_loc, next_time, constraint_table,agent):
         return False
 
 
-def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time_start, agent=0, constraints=[], edges = 0, prev=None):
+def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time_start,
+                              agent=0, constraints=[], edges = 0, prev=None, cbs = False):
 
 
     """
@@ -110,6 +111,8 @@ def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time
     """
 
     constraint_table, maxtimestep = build_constraint_table(constraints, agent)  # list of constraints
+
+
 
     
     from_node_id = from_node
@@ -129,9 +132,10 @@ def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time
     closed_list[(root['loc'], root['timestep'])] = root
 
     remain = root['remain']
+    #if cbs: condition = remain<5
 
 
-    while len(open_list) > 0: #remain<5
+    while len(open_list) > 0:# and remain<5:
 
 
 

@@ -1,76 +1,81 @@
-"""
-Implement prioritized planner here
-"""
-
 from single_agent_planner import simple_single_agent_astar
 import math
-import random
-random.seed(1)
 
 
-def run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints):
-    #raise Exception("Prioritized planner not defined yet.")
+def run_prioritized_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, print_path = False):
 
-    #for all ac in aircraft_lst get index (Not self.id!) and self
-    for id, ac in enumerate(aircraft_lst):
+    '''
+    #### Prioritized planner
+    # For all planned aircraft, check if it is time to spawn
+    # If true, gather time&locations from preceding a/c for vertex constraints
+    # Plan route using A*, find edge collisions
+    # If present, add edge constraint, plan route using A*
+    '''
 
-        if ac.spawntime == t:
+    for id, ac in enumerate(aircraft_lst):                  # Go through all planned a/c
 
-            ac.status = "taxiing"
+        if ac.spawntime == t:                               # At spawn time
+
+            constraints = []
+
+            ac.status = "taxiing"                           # Set status and start position
             ac.position = nodes_dict[ac.start]["xy_pos"]
 
-            # vertex constraints all other preceding ac.path_to_goal
-            for i in range(id):
-                i_ac = aircraft_lst[i]          #obtain ac
-                for step in i_ac.path_to_goal:  #loop through path to goal for preceding ac
-                    constraints.append(
-                        {'ac': ac.id,              #Add constraint for current ac
+
+            for prev_ac in range(id):                       # Find vertex constraints based on preceding a/c locations
+                for step in aircraft_lst[prev_ac].path_to_goal:
+                    constraints.append(                     # Add constraint for current a/c
+                        {'ac': ac.id,
                          'loc': [step[0]],
                          'timestep': step[1]})
 
 
-            #Loop to find non-colliding path
-            colliding = True
+
+            colliding = True                # Start loop to eliminate edge collisions
+
             while colliding:
 
-                success, path = simple_single_agent_astar(nodes_dict, ac.start, ac.goal, heuristics, t, ac.id, constraints, prev=ac.previous)
+                success, path = simple_single_agent_astar(nodes_dict, ac.start, ac.goal,
+                                                          heuristics, t, ac.id, constraints, prev=ac.previous)
 
-                if ac.id == 0:    #This is for the first ac, always priority
-                    colliding = False
+                if ac.id == 0:
+                    colliding = False       # First a/c has always no collisions
 
-                # look for edge collisions, add constraint and rerun astar
-                new_constraint = False
-                for j in range(len(path) - 2):
-                    for ids in range(id):
-                        ids_ac = aircraft_lst[ids]
-                        if len(ids_ac.path_to_goal)<j+2:
+
+                new_constraint = False      # Keep looking for edge collisions till no new constraints
+
+                for j in range(len(path) - 2):      # Go through all path steps except last step,
+                                                    # (length -2 as path count starts at 0)
+
+                    for prev_ac in range(id):       # Go through all previous a/c
+                        path_prev = aircraft_lst[prev_ac].path_to_goal
+
+                        if len(path_prev)<j+2:      # If previous a/c path is already finished, no collision possible
                             continue
-                        #print('len',j,path[j+1],ids_ac.path_to_goal[j-1])
-                        if path[j][0] == ids_ac.path_to_goal[j][0] and path[j+1][0] == ids_ac.path_to_goal[j-1][0]:
-                            #print('ja edge')
-                            constraints.append(
-                                {'ac': ac.id,  # Add constraint for current ac
+
+                        if path[j][0] == path_prev[j][0] and path[j+1][0] == path_prev[j-1][0]:
+
+                            constraints.append(     # Add edge constraint for current a/c if edge collision
+                                {'ac': ac.id,
                                  'loc': [path[j][0],path[j+1][0]],
                                  'timestep': path[j+1][1]})
-                            new_constraint = True
+                            new_constraint = True   # Path needs to be replanned again using A*
 
-                if new_constraint == False:
+                if new_constraint == False:         # If no more ccollisions, path is finished
                     colliding = False
  
-            if success is False:
+            if success is False:                    # Fail-safe if a/c cannot be planned
                 print('no path found for', ac.id)
                 ac.status = 'Fail'
                 break
-                #raise BaseException("No solution found for", ac.id)
 
-            ac.path_to_goal = path[1:]
-            next_node_id = ac.path_to_goal[0][0]  # next node is first node in path_to_goal
-            ac.from_to = [path[0][0], next_node_id]
-            # print("Path AC", ac.id, ":", path)
-            ac.path_total = path
+            ac.path_to_goal = path[1:]              # Push path
+            next_node_id = ac.path_to_goal[0][0]    # Set next node
+            ac.from_to = [path[0][0], next_node_id] # Update from-to nodes
 
-            # Check the path
+            if print_path:
+                print("Path AC", ac.id, ":", path)
+
+            # Check the path for time inconsistency
             if path[0][1] != t:
                 raise Exception("Something is wrong with the timing of the path planning")
-
-    return constraints

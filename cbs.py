@@ -1,7 +1,3 @@
-"""
-Implement CBS here
-"""
-
 from single_agent_planner import simple_single_agent_astar
 import math
 import heapq
@@ -9,112 +5,79 @@ import random
 random.seed(1)
 import time as timer
 
-def get_location(path, time):
+def get_location(path, time):   # Module to get location at certain time
     if time < 0:
         return path[0]
     elif time < len(path):
         return path[time]
-    else:
-        return path[-1]  # wait at the goal location
 
-def detect_collision(path1, path2):
-    ##############################
-    # Task 3.1: Return the first collision that occurs between two robot paths (or None if there is no collision)
-    #           There are two types of collisions: vertex collision and edge collision.
-    #           A vertex collision occurs if both robots occupy the same location at the same timestep
-    #           An edge collision occurs if the robots swap their location at the same timestep.
-    #           You should use "get_location(path, t)" to get the location of a robot at time t.
+def detect_collision(path1, path2):         # Detect collision between two paths
 
-    max_len = min(len(path1),len(path2))
+    max_len = min(len(path1),len(path2))    # Only look as far as shortest path
 
     for i in range(1, max_len):
 
-        node1 = path1[i]
+        node1 = path1[i]        # Locations at time t and t-1 for 2 agents
         node2 = path2[i]
         node1p = path1[i - 1]
         node2p = path2[i - 1]
 
-        # vertex
+        # Vertex collision
         if node1 == node2:
-            return [node1[0], node1[1]]
+            return [node1[0], node1[1]]     # Return location and time of node 1
 
-        # edge
+        # Edge collision
         if node1[0] == node2p[0] and node2[0] == node1p[0]:
-            return [node1p[0], node1[0], node1[1]]
+            return [node1p[0], node1[0], node1[1]]  # Return both locations and time of collision
 
     return None
 
-def detect_collisions(paths,agent_ids):
-    ##############################
-    # Task 3.1: Return a list of first collisions between all robot pairs.
-    #           A collision can be represented as dictionary that contains the id of the two robots, the vertex or edge
-    #           causing the collision, and the timestep at which the collision occurred.
-    #           You should use your detect_collision function to find a collision between two robots.
+def detect_collisions(paths,agent_ids):     # Loop through all agent paths to find collisions
 
     collisions = []
 
-
     agents = len(paths)
-    for i in range(agents-1):
-        for j in range(i+1,agents):
+    for i in range(agents-1):               # length -1 as list count starts at 0
+        for j in range(i+1,agents):         # i+1 to skip current agent
             coll = detect_collision(paths[i],paths[j])
-            if coll != None:
-                #print('dit',{'a1': i, 'a2': j, 'loc': coll[:-1], 'timestep': coll[-1]})
+            if coll != None:                # Collect all collisions at location and timesteps
                 collisions.append({'a1': agent_ids[i], 'a2': agent_ids[j], 'loc': coll[:-1], 'timestep': coll[-1]})
 
     return collisions
 
-def standard_splitting(collision):
-    ##############################
-    # Task 3.2: Return a list of (two) constraints to resolve the given collision
-    #           Vertex collision: the first constraint prevents the first agent to be at the specified location at the
-    #                            specified timestep, and the second constraint prevents the second agent to be at the
-    #                            specified location at the specified timestep.
-    #           Edge collision: the first constraint prevents the first agent to traverse the specified edge at the
-    #                          specified timestep, and the second constraint prevents the second agent to traverse the
-    #                          specified edge at the specified timestep
-
-    #print('coll', collision['loc'])
+def standard_splitting(collision):  # Split collision into two constraints
 
     a = {'ac': collision['a1'], 'loc': collision['loc'], 'timestep': collision['timestep']}
     b = {'ac': collision['a2'], 'loc': collision['loc'][::-1], 'timestep': collision['timestep']}
 
     return [a,b]
 
-def get_sum_of_cost(paths):
+def get_sum_of_cost(paths):     # Add all lengths of all paths
     rst = 0
     for path in paths:
         rst += len(path) - 1
     return rst
 
 class CBSSolver(object):
-    """The high-level search of CBS."""
 
-    def __init__(self, starts, goals, heuristics, nodes_dict,time_start, agent_id, agent_size, currents, constraint, previous):
-        """my_map   - list of lists specifying obstacle positions
-        starts      - [(x1, y1), (x2, y2), ...] list of start locations
-        goals       - [(x1, y1), (x2, y2), ...] list of goal locations
-        """
+    def __init__(self, starts, goals, heuristics, nodes_dict,time_start, agent_id,
+                 agent_size, constraint, previous):
 
         self.nodes_dict = nodes_dict
-        self.starts = starts
-        self.goals = goals
-        self.previous = previous
+        self.starts = starts                # Start locations
+        self.goals = goals                  # Goal locations
+        self.previous = previous            # Previous location to prevent backtracking
         self.num_of_agents = len(goals)
         self.start_times = time_start
-        self.agent_ids = agent_id
-        self.size = agent_size
-        self.currents = currents
-        self.constraint = constraint
+        self.agent_ids = agent_id           # id numbers of agents
+        self.size = agent_size              # Size of agents
+        self.constraint = constraint        # Constraints per agent (going backwards)
 
         self.num_of_generated = 0
         self.num_of_expanded = 0
-        self.CPU_time = 0
 
         self.open_list = []
-
-        # compute heuristics for the low-level search
-        self.heuristics = heuristics
+        self.heuristics = heuristics        # Lower level heuristics
 
     def push_node(self, node):
         heapq.heappush(self.open_list, (node['cost'], len(node['collisions']), self.num_of_generated, node))
@@ -128,29 +91,23 @@ class CBSSolver(object):
         return node
 
     def find_solution(self):
-        """ Finds paths for all agents from their start locations to their goal locations
 
-        disjoint    - use disjoint splitting or not
-        """
-
-        #self.start_time = timer.time()
-
-        # Generate the root node
-        # constraints   - list of constraints
-        # paths         - list of paths, one for each agent
-        #               [[(x11, y11), (x12, y12), ...], [(x21, y21), (x22, y22), ...], ...]
-        # collisions     - list of collisions in paths
-        root = {'cost': 0,
+        root = {'cost': 0,                  # Set root node
                 'constraints': [],
                 'paths': [],
                 'collisions': []}
 
-        for i in range(self.num_of_agents):  # Find initial path for each agent
+        for i in range(self.num_of_agents):  # Find initial path for all agents
 
-            root['constraints'] = list(self.constraint[i])
+            if len(self.constraint[i]) != 0:
+                const = self.constraint[i]
+                for elements in const:
+                    root['constraints'].append(elements)
+
 
             success, path = simple_single_agent_astar(self.nodes_dict, self.starts[i], self.goals[i], self.heuristics,
-                                             self.start_times[i], self.agent_ids[i], root['constraints'], prev= self.previous[i])
+                                             self.start_times[i], self.agent_ids[i], root['constraints']
+                                                      , prev= self.previous[i], cbs = True)
 
             #if not success:
             #    raise BaseException('No solutions')
@@ -196,7 +153,8 @@ class CBSSolver(object):
                         'collisions': []}
 
                 success, path = simple_single_agent_astar(self.nodes_dict, self.starts[ai], self.goals[ai], self.heuristics,
-                                                 self.start_times[ai], self.agent_ids[ai], child['constraints'], prev=self.previous[ai])
+                                                 self.start_times[ai], self.agent_ids[ai], child['constraints']
+                                                          , prev=self.previous[ai], cbs = True)
 
                 if success:
                     child['paths'][ai] = path
@@ -217,7 +175,7 @@ class CBSSolver(object):
         return root['paths']
 
 
-def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
+def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t, print_path):
 
     starts = []
     goals = []
@@ -225,7 +183,6 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
     time_starts = []
     agent_ids = []
     agent_size = []
-    currents = []
     constraints = []
     lock = []
 
@@ -240,7 +197,6 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
             time_starts.append(t) #Need to finish current movement first
             agent_ids.append(ac.id)
             agent_size.append(ac.size)
-            currents.append((ac.from_to[0],t))
             lock.append([ac.goal, len(ac.path_to_goal)])
 
             backward = []
@@ -267,7 +223,6 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
             time_starts.append(t)
             agent_ids.append(ac.id)
             agent_size.append(ac.size)
-            currents.append(-1)
             constraints.append([])
 
             for loc in lock:
@@ -284,7 +239,7 @@ def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t):
             ac.position = nodes_dict[ac.start]["xy_pos"]
 
 
-            cbs = CBSSolver(starts, goals, heuristics, nodes_dict,time_starts, agent_ids, agent_size, currents, constraints, previous)
+            cbs = CBSSolver(starts, goals, heuristics, nodes_dict,time_starts, agent_ids, agent_size, constraints, previous)
             paths = cbs.find_solution()
 
             for ids, path in enumerate(paths):
