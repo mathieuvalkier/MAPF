@@ -258,6 +258,9 @@ def main_loop(random_id, print_path, start_time):
         for i, ac in enumerate(aircraft_lst):
             if ac.status == "taxiing":
                 ac.move(dt, t)
+
+            # Check for departed aircraft if the runway is occupied
+            # Hold occupied for 0.5 seconds.
             if ac.rwyblock[0] and ac.rwyblock[1]+0.5<t:
                 block_runway = True
 
