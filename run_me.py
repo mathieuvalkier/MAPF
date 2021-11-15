@@ -191,7 +191,7 @@ def main_loop(random_id, print_path, start_time):
 
         size = random.choice([1,1,1,1,2,2,3])           # Pick random size, smaller sizes more common
 
-        if size == 3 and a_d = 'D':                     # Large size departure need whole runway
+        if size == 3 and a_d == 'D':                     # Large size departure need whole runway
             goal_node = 2.0
 
         ac = Aircraft(id, a_d, start_node, goal_node, t, nodes_dict, size)

@@ -53,15 +53,15 @@ def build_constraint_table(constraints, agent):
     maxtimestep = 0
 
     for constraint in constraints:
-        if agent == constraint['ac']:
+        if agent == constraint['ac']:           # Take constraints specific to agent
             neg_constraints.append(constraint)
-
+                                                # Find latest constraint
             maxtimestep = max(constraint['timestep'],maxtimestep)
 
     for i in range(int(maxtimestep*2) + 1):
-        constraint_table.append([])
+        constraint_table.append([])             # Make table with in 0.5 timesteps
 
-    for constraint in neg_constraints:
+    for constraint in neg_constraints:          # Add constraints with loc and timestep
         constraint_table[int(constraint['timestep']*2)].append({'loc': constraint['loc']})
 
 
@@ -69,18 +69,20 @@ def build_constraint_table(constraints, agent):
 
 def is_constrained(curr_loc, next_loc, next_time, constraint_table,agent):
 
+    # First check if constraint table is shorter than current time
+    # If true, not constrained
     if len(constraint_table)<(next_time*2+1):
         return False
 
     else:
         for entries in constraint_table[int(next_time*2)]:
-            coords = entries['loc']
-            if len(coords) == 1:
-                if coords[0] == next_loc:
+            coords = entries['loc']         # Find amount of nodes in constraint
+            if len(coords) == 1:            # If 1 (vertex)
+                if coords[0] == next_loc:   # Check next location
                     return True
-            if len(coords) == 2:
+            if len(coords) == 2:            # If 2 (edge)
                 if coords[0] == curr_loc and coords[1] == next_loc:
-                    return True
+                    return True             # Check current and next location
         return False
 
 
@@ -102,88 +104,97 @@ def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time
         - path = list of tuples with (loc, timestep) pairs -> example [(37, 1), (101, 2)]. Empty list if success == False.
     """
 
-    constraint_table, maxtimestep = build_constraint_table(constraints, agent)  # list of constraints
+    # Construct constraint table
+    constraint_table, maxtimestep = build_constraint_table(constraints, agent)
 
-
-
-    
     from_node_id = from_node
     goal_node_id = goal_node
     time_start = time_start
     previous_node = prev
 
-    
+    # Create open_list, set-up root node
     open_list = []
     closed_list = dict()
     earliest_goal_timestep = time_start
     h_value = heuristics[from_node_id][goal_node_id]
     root = {'loc': from_node_id, 'g_val': 0, 'h_val': h_value, 'parent': None, 'timestep': time_start, 'previous': previous_node, 'remain':0}
 
-    nummer = 1
+    nummer = 1      # Number to count node iterations
     push_node(open_list, root, nummer)
     closed_list[(root['loc'], root['timestep'])] = root
 
-    remain = root['remain']
+    remain = root['remain']     # Count how many steps ac needs to stand still
+                                # Only used in CBS to prevent deadlocks
 
-    while len(open_list) > 0:# and remain<5:        #Only use remain<5 for CBS !
+    def run_loop(length, remain, cbs):
+        if cbs:
+            return length > 0 and remain<5  # In CBS if ac stands still more than 5 timesteps, remove ac as deadlock
+        else:
+            return length > 0
 
-
+    while run_loop(len(open_list), remain, cbs):
 
         nummer = nummer + 1
-        curr = pop_node(open_list)
+        curr = pop_node(open_list)  # Get cheapest node from open_list
 
         remain = curr['remain']
 
+        # If path has reached goal, return path
         if curr['loc'] == goal_node_id and curr['timestep'] >= earliest_goal_timestep:
             return True, get_path(curr)
 
+        # Find new possible nodes by looking at neighbours
         possibles = [curr['loc']]
         for entry in nodes_dict[curr['loc']]["neighbors"]:
             possibles.append(entry)
 
+        # Remove previous node as possible node to reach
         if curr['previous'] in possibles: possibles.remove(curr['previous'])
 
-
+        # For each possible node, look if constrained and check if solution is better than previous
         for neighbor in possibles:
 
+            # Edge weight is normally 0.5, except if other value is given
             if edges == 0 or curr['loc'] == neighbor:
                 weight = 0.5
             else:
                 weight = edges[(curr['loc'], neighbor)]['weight']
 
+            # Create child node for next timestep
             child = {'loc': neighbor,
-                    'g_val': curr['g_val'] + weight,#+ 0.5,
+                    'g_val': curr['g_val'] + weight,
                     'h_val': heuristics[neighbor][goal_node_id],
                     'parent': curr,
                     'timestep': curr['timestep'] + 0.5,
                     'previous': curr['previous'],
                     'remain': curr['remain']}
 
-
+            # If constraint on step, continue to next option
             if is_constrained(curr['loc'], child['loc'], child['timestep']  ,
                               constraint_table, agent) == True:
                 continue
 
+            # If node is already visited, check if it improves the solution
             if (child['loc'], child['timestep']) in closed_list:
                 existing_node = closed_list[(child['loc'], child['timestep'])]
                 if compare_nodes(child, existing_node):
-                    if child['loc'] != curr['loc']:
-                        child['previous'] = curr['loc']
-                        child['remain'] = 0
+                    if child['loc'] != curr['loc']:     # If not the same node,
+                        child['previous'] = curr['loc'] # Update previous node
+                        child['remain'] = 0             # Reset amount of nodes halted
                     else:
-                        child['remain'] +=1
+                        child['remain'] +=1             # Count 1 halted node
                     closed_list[(child['loc'], child['timestep'])] = child
-                    push_node(open_list, child,nummer)
+                    push_node(open_list, child,nummer)  # Push node
 
-
+            # If node is new
             else:
-                if child['loc'] != curr['loc']:
-                    child['previous'] = curr['loc']
-                    child['remain'] = 0
+                if child['loc'] != curr['loc']:     # If not the same node,
+                    child['previous'] = curr['loc'] # Update previous node
+                    child['remain'] = 0             # Reset amount of nodes halted
                 else:
-                    child['remain'] +=1
+                    child['remain'] +=1             # Count 1 halted node
                 closed_list[(child['loc'], child['timestep'])] = child
-                push_node(open_list, child,nummer)
+                push_node(open_list, child,nummer)  # Push node
 
 
     print("No path found, "+str(len(closed_list))+" nodes visited")
