@@ -1,8 +1,6 @@
 from single_agent_planner import simple_single_agent_astar
 import math
 
-#test
-
 class Aircraft(object):
     """Aircraft class, should be used in the creation of new aircraft."""
 
@@ -19,55 +17,54 @@ class Aircraft(object):
         """
         
         #Fixed parameters
-        self.speed = 1         #how much a/c moves per unit of t
-        self.id = flight_id       #flight_id
-        self.type = a_d           #arrival or departure (A/D)
+        self.speed = 1                #how much a/c moves per unit of t
+        self.id = flight_id           #flight_id
+        self.type = a_d               #arrival or departure (A/D)
         self.size = size
-        self.spawntime = spawn_time #spawntime
-        self.start = start_node   #start_node_id
-        self.goal = goal_node     #goal_node_id
-        self.nodes_dict = nodes_dict #keep copy of nodes dict
+        self.spawntime = spawn_time   #spawntime
+        self.start = start_node       #start_node_id
+        self.goal = goal_node         #goal_node_id
+        self.nodes_dict = nodes_dict  #keep copy of nodes dict
         self.edges_dict = None
         
         #Route related
-        self.status = None 
+        self.status = None     #aircraft status
         self.path_to_goal = [] #planned path left from current location
-        self.from_to = [0,0]
-        self.path_total = []
+        self.from_to = [0,0]   #initial current xy loc, next xy loc
+        self.path_total = []   #empty list of tuples with loc and timestep
 
         #State related
-        self.heading = 0
-        self.position = (0,0) #xy position on map
+        self.heading = 0      #initial heading 
+        self.position = (0,0) #initial xy position on map
 
         #Added
-        self.vision = []
-        self.busyness = []
-        self.constraints = []
-        self.replan = False
-        self.check_gate = False
-        self.seperation = False
+        self.vision = []         #empty list needed for vision
+        self.busyness = []       #empty list needed for NESW busyness
+        self.constraints = []    #empty list needed for constratints
+        self.replan = False      #replan swith
+        self.check_gate = False  #check gates switch
+        self.seperation = False  #maintaining separations switch
 
-        self.rwycheck = False
-        self.rwyblock = [False, 0]
+        self.rwycheck = False       #runway check
+        self.rwyblock = [False, 0]  #runway block: list of True/False switch at time t
 
         #Intersection
-        self.intersections = []
-        self.intersectionsearch = True
-        self.replannode = 0
-        self.intersectionpriority = []
-        self.replan_inter = False
-        self.previous = 0
+        self.intersections = []         #empty list needed for intersections 
+        self.intersectionsearch = True  #search for intersection nodes, switch
+        self.replannode = 0             #initial location of replan node
+        self.intersectionpriority = []  #empty list for priority 
+        self.replan_inter = False       #switch when replan node = current (from) node
+        self.previous = 0               #initial location of previous node
 
-        self.sideside = [False]
+        self.sideside = [False]     #switch of sideside situation    
 
-        self.crossingwait = False
-        self.between = False
-        self.waiting = False
+        self.crossingwait = False   #switch of crossingwait situation
+        self.between = False        #switch of agents between nodes situation
+        self.waiting = False        #switch of agents waiting
 
-        self.noreturn = False
+        self.noreturn = False       #switch of agents cannot return
 
-        self.actualpath = []
-
+        self.actualpath = []        #empty list of next (to) node xy location and next time t+dt 
 
 
     def get_heading(self, xy_start, xy_next):
@@ -138,12 +135,12 @@ class Aircraft(object):
 
         #Check if goal is reached or if to_node is reached
         if self.position == xy_to and self.path_to_goal[0][1] == t+dt: #If with this move its current to node is reached
-            if self.position == self.nodes_dict[self.goal]["xy_pos"]: #if the final goal is reached
+            if self.position == self.nodes_dict[self.goal]["xy_pos"]: #If the final goal is reached
                 self.actualpath.append((self.from_to[1],t+dt))
                 self.status = "arrived"
 
-                if self.type == 'D':
-                    self.rwyblock = [True, t]
+                if self.type == 'D':           #If an agent departs at runway
+                    self.rwyblock = [True, t]  #runway is blocked for other agents at time t
 
             else:  #current to_node is reached, update the remaining path
                 remaining_path = self.path_to_goal
@@ -153,46 +150,43 @@ class Aircraft(object):
                 new_from_id = self.from_to[1] #new from node
                 new_next_id = self.path_to_goal[0][0] #new to node
 
-                if new_from_id != self.from_to[0]:
-                    self.last_node = self.from_to[0]
+                if new_from_id != self.from_to[0]:      #If new from node is not from_node
+                    self.last_node = self.from_to[0]    #last node = from_node
 
-                if self.from_to[0] != self.from_to[1]:
-                    self.previous = self.from_to[0]
+                if self.from_to[0] != self.from_to[1]:  #If from_node is not equal to new next node
+                    self.previous = self.from_to[0]     #previous = from_node
                 
                 self.from_to = [new_from_id, new_next_id] #update new from and to node
 
                 self.replan = True #Needed for weights
                 
-                #seperation check switch
-                
-                self.seperation = True
+                self.seperation = True #seperation check switch
 
-                if len(self.path_to_goal)<5 and self.type == 'A':
-                    self.replan = False
-                    self.check_gate = True
+                if len(self.path_to_goal)<5 and self.type == 'A': #If number of remaining nodes to goal smaller than 5 and goal of agents is gates
+                    self.replan = False       
+                    self.check_gate = True   #check gates
 
-                if self.replannode == self.from_to[0]:
-                    #self.replan = False
-                    self.replan_inter = True
+                if self.replannode == self.from_to[0]: #If replan node = from_node 
+                    self.replan_inter = True           #replan crossing collision
 
-                if self.nodes_dict[self.from_to[0]]['type'] == 'intersection':
-                    self.intersectionsearch = True
-                    self.waiting = False
+                if self.nodes_dict[self.from_to[0]]['type'] == 'intersection':  #If from_node is an intersection
+                    self.intersectionsearch = True   #search intersections
+                    self.waiting = False             #agents not waiting
 
-                if self.nodes_dict[self.from_to[0]]['type'] == 'between':
-                    self.between = True
+                if self.nodes_dict[self.from_to[0]]['type'] == 'between': #IF from_node is a node between intersections
+                    self.between = True              #between is True
 
                 #find upcoming intersections ac will follow
         if self.intersectionsearch:
-            intersectlist = []
-            if self.nodes_dict[self.from_to[0]]['type'] != 'between':
-                intersectlist.append(self.from_to[0])
+            intersectlist = []      #open intersection list
+            if self.nodes_dict[self.from_to[0]]['type'] != 'between': #If from_node is not between intersections
+                intersectlist.append(self.from_to[0])                 #append from_node to intersection list
             else:
-                intersectlist.append(self.intersections[0])
+                intersectlist.append(self.intersections[0])       #Else it is an intersection
             for loc in self.path_to_goal:
-                if self.nodes_dict[loc[0]]['type'] != 'between':
-                    intersectlist.append(loc[0])
-            self.intersections = list(intersectlist[0:3])
+                if self.nodes_dict[loc[0]]['type'] != 'between':  #If x location is not between intersections
+                    intersectlist.append(loc[0])                  #append x location to intersection list
+            self.intersections = list(intersectlist[0:3])         #list of 3 following intersections
             self.intersectionsearch = False
 
         self.vision = []
@@ -225,8 +219,3 @@ class Aircraft(object):
             #Check the path
             if path[0][1] != t:
                 raise Exception("Something is wrong with the timing of the path planning")
-
-    
-
-
-                
