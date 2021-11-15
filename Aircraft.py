@@ -20,7 +20,7 @@ class Aircraft(object):
         self.speed = 1                #how much a/c moves per unit of t
         self.id = flight_id           #flight_id
         self.type = a_d               #arrival or departure (A/D)
-        self.size = size
+        self.size = size              #size of aircrafts (1,2,3) 
         self.spawntime = spawn_time   #spawntime
         self.start = start_node       #start_node_id
         self.goal = goal_node         #goal_node_id
