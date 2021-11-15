@@ -47,6 +47,9 @@ class Aircraft(object):
         self.check_gate = False
         self.seperation = False
 
+        self.rwycheck = False
+        self.rwyblock = [False, 0]
+
         #Intersection
         self.intersections = []
         self.intersectionsearch = True
@@ -138,6 +141,9 @@ class Aircraft(object):
             if self.position == self.nodes_dict[self.goal]["xy_pos"]: #if the final goal is reached
                 self.actualpath.append((self.from_to[1],t+dt))
                 self.status = "arrived"
+
+                if self.type == 'D':
+                    self.rwyblock = [True, t]
 
             else:  #current to_node is reached, update the remaining path
                 remaining_path = self.path_to_goal

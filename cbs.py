@@ -5,6 +5,13 @@ import random
 random.seed(1)
 import time as timer
 
+'''
+#### CBS planner
+# run_CBS: loop through all aircraft and set important data in lists for cbs solver
+# If new aircraft can be spawned, find paths of all aircraft using cbs solver class
+# Push paths to all aircraft and continue loop
+'''
+
 def get_location(path, time):   # Module to get location at certain time
     if time < 0:
         return path[0]
@@ -92,6 +99,15 @@ class CBSSolver(object):
 
     def find_solution(self):
 
+        '''
+        #### Solver
+        # Initial paths are found with existing constraints and start and goals
+        # Find collisions and make constraints for both involved aircraft
+        # For each constraint, find a solution
+        # Continue with the solution with the lowest cost
+        # If no collisions are left, stop the solver, return path
+        '''
+
         root = {'cost': 0,                  # Set root node
                 'constraints': [],
                 'paths': [],
@@ -99,162 +115,167 @@ class CBSSolver(object):
 
         for i in range(self.num_of_agents):  # Find initial path for all agents
 
-            if len(self.constraint[i]) != 0:
+            if len(self.constraint[i]) != 0:    # If there are constraints for certain agents
                 const = self.constraint[i]
-                for elements in const:
+                for elements in const:          # Append constraints to the node
                     root['constraints'].append(elements)
 
-
+            # Use A* to find initial paths
             success, path = simple_single_agent_astar(self.nodes_dict, self.starts[i], self.goals[i], self.heuristics,
-                                             self.start_times[i], self.agent_ids[i], root['constraints']
+                                             self.start_times, self.agent_ids[i], root['constraints']
                                                       , prev= self.previous[i], cbs = True)
-
-            #if not success:
-            #    raise BaseException('No solutions')
-
+            # Append path to node
             root['paths'].append(path)
 
+        # Get the total cost of all the paths and find collisions
         root['cost'] = get_sum_of_cost(root['paths'])
         root['collisions'] = detect_collisions(root['paths'],self.agent_ids)
         self.push_node(root)
 
         start_time = timer.time()
 
+        while len(self.open_list) > 0:      # While there are nodes in the open_list
 
-        while len(self.open_list) > 0:
+            parent = self.pop_node()        # Take the node with the least cost
 
-
-            parent = self.pop_node()
-
-            if len(parent['collisions']) == 0:
+            if len(parent['collisions']) == 0:  # If there are no collisions, stop solver
                 return parent['paths']
 
-            constraints = standard_splitting(parent['collisions'][0])
+            constraints = standard_splitting(parent['collisions'][0])   # make constraints from collisions
 
-            a,b = constraints[0]['ac'],constraints[1]['ac']
-            c,d= self.agent_ids.index(a),self.agent_ids.index(b)
-            e,f = self.size[c], self.size[d]
-
-            if (e<f and self.agent_ids[-1] !=d) or self.agent_ids[-1] ==c :
-                constraints = constraints[::-1]
-
-            for constraint in constraints:
+            for constraint in constraints:  # For both constraints find a solution
 
 
                 #get the previous constraints and add new constraint
                 constraintlist =  list(parent['constraints'])
                 constraintlist.append(constraint)
 
-                ai = self.agent_ids.index(constraint['ac'])
+                ai = self.agent_ids.index(constraint['ac'])     # current aircraft index indicated with 'ai'
 
                 child = {'cost': 0,
                         'constraints': constraintlist + list(self.constraint[ai]),
                         'paths': parent['paths'],
                         'collisions': []}
 
+                # Find a path for the child node with new constraints
                 success, path = simple_single_agent_astar(self.nodes_dict, self.starts[ai], self.goals[ai], self.heuristics,
-                                                 self.start_times[ai], self.agent_ids[ai], child['constraints']
+                                                 self.start_times, self.agent_ids[ai], child['constraints']
                                                           , prev=self.previous[ai], cbs = True)
 
+                # If there is a path, push the path to the open_list and find collisions and cost
                 if success:
                     child['paths'][ai] = path
                     child['collisions'] = detect_collisions(child['paths'],self.agent_ids)
                     child['cost'] = get_sum_of_cost(child['paths'])
                     self.push_node(child)
 
+                # If there is no possible solution, no path is returned, aircraft is removed from simulation
+                # Only used in case of deadlocks
                 if not success:
                     child['paths'][ai] = []
                     child['collisions'] = detect_collisions(child['paths'], self.agent_ids)
                     child['cost'] = get_sum_of_cost(child['paths'])
                     self.push_node(child)
 
-
-
-
-
         return root['paths']
 
 
 def run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t, print_path):
+    '''
+    #### run CBS
+    # Data is gathered for all taxiing aircraft
+    # Constraints are formed for going backwards
+    # If t = spawntime of an aircraft, check if there is no deadlock
+    # Solve using cbs solver
+    # push paths to all taxiing aircraft
+    '''
 
-    starts = []
-    goals = []
-    previous = []
-    time_starts = []
-    agent_ids = []
-    agent_size = []
-    constraints = []
-    lock = []
+    starts = []         # Start/current node
+    goals = []          # Goal nodes
+    previous = []       # Previous node
+    agent_ids = []      # Agent id
+    agent_size = []     # Agent size
+    constraints = []    # Constraints (backwards/already moving)
+    lock = []           # list of goal and length of path left
 
-
-    #for all ac in aircraft_lst get index (Not self.id!) and self
+    #for all ac in aircraft_lst get index (id) and self (ac)
     for id, ac in enumerate(aircraft_lst):
 
         if ac.status == "taxiing":
-            starts.append(ac.from_to[0])#path_to_goal[0][0])
+            starts.append(ac.from_to[0])
             goals.append(ac.goal)
             previous.append(ac.previous)
-            time_starts.append(t) #Need to finish current movement first
             agent_ids.append(ac.id)
             agent_size.append(ac.size)
             lock.append([ac.goal, len(ac.path_to_goal)])
 
-            backward = []
+            prohibited = []
+            # Make constraints for not finishing current movement
             for entry in nodes_dict[ac.from_to[0]]['neighbors']:
                 if entry != ac.from_to[1]:
-                    backward.append(
+                    prohibited.append(
                         {'ac': ac.id,              #Add constraint for current ac
                          'loc': [entry],
                          'timestep': t+0.5})
 
-            backward.append(
+            # Make constraint for going backwards
+            prohibited.append(
                 {'ac': ac.id,  # Add constraint for current ac
                  'loc': [ac.previous],
                  'timestep': t + 0.5})
-            constraints.append(backward)
 
-        #make lists: starts, goals, time_starts, agent_ids
+            constraints.append(prohibited)
 
         if ac.spawntime == t:
 
             starts.append(ac.start)
             goals.append(ac.goal)
             previous.append(ac.previous)
-            time_starts.append(t)
             agent_ids.append(ac.id)
             agent_size.append(ac.size)
             constraints.append([])
 
+            # Check for previous aircraft if start gate is someone's arrival gate
+            # If other aircraft is too close to gate, find new departure gate
             for loc in lock:
                 if ac.start == loc[0] and loc[1]<3:
-                    starts.pop()
+                    starts.pop()            # Remove start location from list
                     start_node = ac.start
-                    while start_node == ac.start:
+                    while start_node == ac.start:   # Find new possible gate until different one is found
                         A_goal_nodes = [97.0, 34.0, 35.0, 36.0, 98.0]
                         start_node = random.choice(A_goal_nodes)
-                    starts.append(start_node)
+                    starts.append(start_node)   # Update aircraft start node
                     ac.start = start_node
 
             ac.status = "taxiing"
             ac.position = nodes_dict[ac.start]["xy_pos"]
 
-
-            cbs = CBSSolver(starts, goals, heuristics, nodes_dict,time_starts, agent_ids, agent_size, constraints, previous)
+            # Solve using cbs solver class
+            cbs = CBSSolver(starts, goals, heuristics, nodes_dict,t, agent_ids, agent_size, constraints, previous)
             paths = cbs.find_solution()
 
+            # for all ac in path get index of path (ids) and paths (path)
             for ids, path in enumerate(paths):
 
+                # For all taxiing aircraft, update paths.
                 aclist = aircraft_lst[agent_ids[ids]]
-                if len(path) == 0:
+                if len(path) == 0:                  # First check if arrived
                     aclist.status = "arrived"
                     continue
-                aclist.path_to_goal = path[1:]
-                next_node_id = aclist.path_to_goal[0][0]  # next node is first node in path_to_goal
+                aclist.path_to_goal = path[1:]                  # Push path to aircraft
+                next_node_id = aclist.path_to_goal[0][0]
                 aclist.from_to = [path[0][0], next_node_id]
 
     return
 
 ################################
 
+
+# a, b = constraints[0]['ac'], constraints[1]['ac']
+# c, d = self.agent_ids.index(a), self.agent_ids.index(b)
+# e, f = self.size[c], self.size[d]
+#
+# if (e < f and self.agent_ids[-1] != d) or self.agent_ids[-1] == c:
+#     constraints = constraints[::-1]
 
 

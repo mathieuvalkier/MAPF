@@ -61,7 +61,7 @@ def NESW(edges_dict, curr, nex, nesw):
     return (edges_dict)
 
 
-def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints, print_path):
+def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints, print_path, block_runway):
 
     #for all ac in aircraft_lst get index
     for id, ac in enumerate(aircraft_lst):
@@ -297,15 +297,16 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                 ac1_1,ac1_2, ac1_3 = ac.intersections[0],ac.intersections[1],ac.intersections[2]
                 ac2_1, ac2_2, ac2_3 = ac_v.intersections[0], ac_v.intersections[1], ac_v.intersections[2]
 
-
+                # Different head-on collision scenarios, see report for reference pictures
                 a = ac1_3 == ac2_2 and ac1_2 == ac2_3
                 c = ac1_1 == ac2_3 and ac1_2 == ac2_2 and ac1_3 == ac2_1
                 d = ac1_1 != ac2_1 and ac1_2 == ac2_2 and ac1_3 == ac2_3
                 e = ac1_1 != ac2_1 and ac1_2 == ac2_3 and ac1_3 == ac2_2
 
+                # Side by side collision, see report for reference picture
                 b = ac1_1 == ac2_3 and ac1_2 == ac2_2 and ac1_3 != ac2_1
 
-                if a or c or d or e: #or (ac.intersections[2] == ac_v.intersections[0] and ac.intersections[0] == ac_v.intersections[2]):
+                if a or c or d or e:
                     ac.replannode = ac.intersections[0]             # If next intersect. is reached, replan the a/c
                     ac_v.replannode = ac_v.intersections[0]
 
@@ -314,27 +315,33 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                         ac.intersectionpriority = [ac_v.id, True, 0]        # [id, priority, new path (empty)]
                         ac_v.intersectionpriority = [ac.id, False, 0]
 
+                # Halt one aircraft, only if not already halted
                 if b and not ac_v.sideside[0]:
-                    ac_v.sideside = [True, ac2_2, round(t * 2) / 2+1]
+                    ac_v.sideside = [True, ac2_2, round(t * 2) / 2+1]       # [waiting?, node, timestep to wait]
 
+        # Halt one aircraft for side by side collision
         if ac.sideside[0]:
 
+            # If standing at intersection it is already not necessary, skip whole prevention
             if nodes_dict[ac.path_to_goal[0][0]]['type'] == 'intersection':
                 ac.sideside = [False]
                 continue
 
+            # If aircraft is already waiting, skip
             if ac.waiting:
                 continue
 
+            # If aircraft has passed the intersection of collision, turn of waiting boolean
             if ac.intersections[0] == ac.sideside[1]:
                 ac.waiting = False
                 ac.sideside = [False]
                 continue
 
+            # Function to wait at next node
             wait_node(ac, print_path)
 
-            ac.intersectionsearch = True  # New path means new upcoming intersections
-            ac.waiting = True
+            ac.intersectionsearch = True    # New path means new upcoming intersections
+            ac.waiting = True               # Aircraft has already been delayed one step
 
 
 
@@ -391,5 +398,19 @@ def run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constrai
                     ac.intersectionsearch = True    # New path means new upcoming intersections
 
             ac.replan_inter = False     # Turn off replan for intersection
+
+        #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### ####
+        '''
+        ##### Check runway occupation
+        # If aircraft nears runway nodes check if runway is occupied
+        # If not already waiting, wait 1 timestep before entering runway
+        '''
+
+        runway_entry = [95.0, 96.0]
+
+        if ac.from_to[1] in runway_entry:
+            if block_runway and not ac.rwycheck:
+                wait_node(ac, print_path)
+                ac.rwycheck = True
 
         #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### ####
