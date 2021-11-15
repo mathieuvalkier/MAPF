@@ -1,28 +1,10 @@
-import numpy as np
 import os
-import random
-import string
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
-import time as timer
-import pygame as pg
-from single_agent_planner import calc_heuristics
-from visualization import map_initialization, map_running
-from Aircraft import Aircraft
-from independent import run_independent_planner
-from prioritized import run_prioritized_planner
-from cbs import run_CBS
-
-import itertools as it
 from bisect import bisect_left
-from typing import List
 import scipy.stats as ss
-import researchpy as rp
 from pylab import genfromtxt
-
-from pandas import Categorical
-
 
 def import_layout(nodes_file, edges_file):
     """
@@ -136,16 +118,16 @@ nodes_dict, edges_dict, _ = import_layout(nodes_file, edges_file)
 ac = []
 total = []
 
+#read 'data' dat file
 file = open('data.dat', 'r')
 for line in file.readlines():
     fname = line.rstrip().split(',') #using rstrip to remove the \n
     total.append([float(i) for i in fname[1::]])
 
-average_list = []
+average_list = []   #open empty 'average' list
 
-
+#read 'average' dat file
 file = open('data_average.dat', 'r')
-#file = open('average_individual.dat', 'r')
 for line in file.readlines():
     fname = line.rstrip().split(',') #using rstrip to remove the \n
     average_list.append([float(i) for i in fname][0])
@@ -162,13 +144,13 @@ df_merged = pd.concat([df1,df2,df3], axis=1)
 df_merged.to_csv('average.csv', header=['Prioritized', 'CBS', 'Distributed'])
 
 
-#Nu krijg je de xy locaties van aircraft 1
+#Get xy locations of aircraft 1 
 a = []
 for loc in ac[0][0]:
     a.append( nodes_dict[loc]["xy_pos"] )
 
 
-
+""" Generates the heatmaps """
 
 for list_full in ac:
 
@@ -179,15 +161,7 @@ for list_full in ac:
         if list[i]==list[i+1]:
             continue
 
-        edges_dict[(list[i],list[i+1])]['count'] +=1
-
-        # xcoords.append(nodes_dict[entry]['x_pos'])
-        # ycoords.append(nodes_dict[entry]['y_pos'])
-
-
-
-#graph = create_graph(nodes_dict, edges_dict)
-
+        edges_dict[(list[i],list[i+1])]['count'] += 1 #count edges
 
 for entry in edges_dict:
     xy = edges_dict[entry]["start_end_pos"]
@@ -197,9 +171,8 @@ for entry in edges_dict:
     yc = [xy[0][1],xy[1][1]]
     print(xc,yc)
 
-    plt.scatter(xc, yc, 20, color='blue')
-    plt.plot(xc, yc, linewidth=edges_dict[entry]['count']*3, color = 'red')
-
+    plt.scatter(xc, yc, 20, color='blue')   #plots the nodes in color blue
+    plt.plot(xc, yc, linewidth=edges_dict[entry]['count']*3, color = 'red')   #plot and highlight the counted edges using color red
 
 for entry in edges_dict:
     xy = edges_dict[entry]["start_end_pos"]
@@ -209,13 +182,15 @@ for entry in edges_dict:
     yc = [xy[0][1],xy[1][1]]
     print(xc,yc)
 
-
-
-
-
-plt.show()
+plt.show() #show total plot with highlighted edges in red and nodes in blue
  
-######## -- Normal distribution Boxplot
+
+"""
+Generates the boxplots from three average taxi time data files: 
+Prioritized, CBS, Distributed (Individual)
+
+"""
+
 plt.rcParams["figure.figsize"] = [7.00, 3.50]
 plt.rcParams["figure.autolayout"] = True
 
@@ -238,29 +213,11 @@ plt.legend()
 plt.show()
 
 
-######## -- Independent T-test: = 2 GROUPS
-def T_test():
-    df_average = pd.read_csv('average.csv', header=['A', 'B'])
-    ttest = rp.ttest(group1= df_average['A'][0:50], group1_name= "Independent",
-                     group2= df_average['A'][50:100], group2_name= "Prioritized")
-                     #group3= df_average['Prioritized'], group3_name= "Prioritized")
-    summary, results = ttest
-    print(summary)
-    print(results)
-    
-    # fig2 = plt.figure(figsize= (15, 7))
-    # ax = fig2.add_subplot(111)
-    
-    # normality_plot, ssi = ss.probplot(df_average['Independent'].values -\
-    #                                  df_average['Prioritized'].values, plot= plt, rvalue=True)
-    # ax.set_title("Probability average taxi time", fontsize= 20)
-    # ax.set
-    # plt.show()
+"""
+Vargha and Delaney's (VD) statistic A-test using:
+    - 'average' data file, 0-100 runs
+"""
 
-#T_test()
-
-
-######## -- A-test
 def VD_A(treatment, control):
     """
     Computes Vargha and Delaney A index
@@ -300,11 +257,4 @@ def VD_A(treatment, control):
 
 print('list', average_list)
 
-print(VD_A(average_list[0:50], average_list[50:100]))
-
-
-
-
-
-
-
+print(VD_A(average_list[0:50], average_list[50:100])) # returns the A test value of list of 'average' data file 
