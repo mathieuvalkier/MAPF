@@ -22,12 +22,12 @@ import csv
 
 #Parameters that can be changed:
 simulation_time = 30
-planner = 'Independent' # Choose which planner to use (currently only Independent is implemented)
-high_demand  = False     # Demand situation, False => normal demand
+planner = 'Individual' # Choose which planner to use (currently only Independent is implemented)
+high_demand  = True     # Demand situation, False => normal demand
 
 #Visualization
 plot_graph = False          #show graph representation in NetworkX
-visualization = False        #pygame visualization
+visualization = True        #pygame visualization
 visualization_speed = 0.05   #set at 0.1 as default
 
 #%% SET SIMULATION PARAMETERS
@@ -96,8 +96,7 @@ def import_layout(nodes_file, edges_file):
                            "count": 0
                            }
         edges_dict[edge_id] = edge_properties
-        # print('edges dict', edges_dict)
-        
+
     #Add neighbor nodes to nodes_dict based on edges between nodes
     for edge in edges_dict:
         from_node = edge[0]
@@ -162,8 +161,9 @@ def main_loop(random_id, print_path, start_time):
         map_properties = map_initialization(nodes_dict, edges_dict)  # visualization properties
 
     #Start of while loop
-    running=True
+    running = True
     escape_pressed = False
+    block_runway = False
     time_end = simulation_time
     random.seed(random_id)
     dt = 0.1 #0.1 #should be factor of 0.5 (0.5/dt should be integer)
@@ -174,38 +174,39 @@ def main_loop(random_id, print_path, start_time):
 
     aircraft_lst = []   #List which can contain aircraft agents
 
-    def ac_spawn(id,t):
+    def ac_spawn(id,t):                                 # Make list of aircraft schedule
 
         # randomize aircraft inputs
         A_start_nodes = [37.0, 38.0]
         A_goal_nodes = [97.0, 34.0, 35.0, 36.0, 98.0]
         D_start_nodes = A_goal_nodes
         D_goal_nodes = [1.0, 2.0]
-        a_d = random.choice(['A', 'D'])
+        a_d = random.choice(['A', 'D'])                 # Randomize arrival or departure
         if a_d == 'A':
-            start_node = random.choice(A_start_nodes)  # .choice
+            start_node = random.choice(A_start_nodes)   # Pick random choice between start and goal nodes
             goal_node = random.choice(A_goal_nodes)
-        elif a_d == 'D':
+        if a_d == 'D':
             start_node = random.choice(D_start_nodes)
             goal_node = random.choice(D_goal_nodes)
-        else:
-            raise ValueError('unknown arrival or departure mode')
 
-        size = random.choice([1,1,1,1,2,2,3])            # 1,2 of 3
+        size = random.choice([1,1,1,1,2,2,3])           # Pick random size, smaller sizes more common
 
-        ac = Aircraft(id, a_d, float(start_node), float(goal_node), t, nodes_dict, size)
+        if size == 3 and a_d = 'D':                     # Large size departure need whole runway
+            goal_node = 2.0
+
+        ac = Aircraft(id, a_d, start_node, goal_node, t, nodes_dict, size)
         aircraft_lst.append(ac)
 
 
-    time_difference = [0.5,1.0,1.5]
-    if high_demand:
+    time_difference = [0.5,1.0,1.5]         # Time separation can be either 0.5/1.0/1.5 seconds
+    if high_demand:                         # In high demand shorter time separation
         time_difference = [0.5,0.5,1.0]
 
 
-    for i in range(40):
+    for i in range(40):                 # Make schedule of 40 aircraft
         if len(aircraft_lst) == 0:
-            new_id = 0
-            spawn_t = 0
+            new_id = 0                  # Count id from 0
+            spawn_t = 0                 # Count spawn time from t = 0
         else:
             new_id = aircraft_lst[-1].id + 1
             spawn_t = aircraft_lst[-1].spawntime + random.choice(time_difference)
@@ -236,6 +237,8 @@ def main_loop(random_id, print_path, start_time):
             escape_pressed = map_running(map_properties, current_states, t)
             timer.sleep(visualization_speed)
 
+
+
         #Do planning
         if planner == "Independent":
             run_independent_planner(aircraft_lst, nodes_dict, edges_dict, heuristics, t, print_path)
@@ -244,43 +247,47 @@ def main_loop(random_id, print_path, start_time):
         elif planner == "CBS":
             run_CBS(aircraft_lst, nodes_dict, edges_dict, heuristics, t, print_path)
         elif planner == "Individual":
-            run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints, print_path)
+            run_individual(aircraft_lst, nodes_dict, edges_dict, heuristics, t, constraints, print_path, block_runway)
         #elif planner == -> you may introduce other planners here
         else:
             raise Exception("Planner:", planner, "is not defined.")
+
+        block_runway = False
 
         #Move the aircraft that are taxiing
         for i, ac in enumerate(aircraft_lst):
             if ac.status == "taxiing":
                 ac.move(dt, t)
+            if ac.rwyblock[0] and ac.rwyblock[1]+0.5<t:
+                block_runway = True
 
         t = t + dt
 
-    # # Save path data to data.dat file
-    paths = []
-    length = []
+    # Save path data to data.dat file
+    paths = []      # Gather path location and times of finished aircraft
+    length = []     # Gather path lengths of finished aircraft
 
     for ac in aircraft_lst:
 
-        path = ac.actualpath
+        path = ac.actualpath            # Only count paths of completed aircraft
         if ac.status == 'taxiing' or len(path)<1:
             continue
 
-        loc = ['l']
+        loc = ['l']                     # Append data to location/time lists
         time = ['t']
         length.append(len(path))
         for entry in path:
             loc.append(entry[0])
             time.append(entry[1])
 
-
         paths.append(loc)
         paths.append(time)
 
-    stdev = np.std(length)
-    mean  = np.average(length)
-    comp_t = timer.time()-start_time
+    stdev = np.std(length)              # Find standard deviation of aircraft taxi lengths
+    mean  = np.average(length)          # Find mean of aircraft taxi lengths
+    comp_t = timer.time()-start_time    # Find computation time of simulation
 
+    # Write data to corresponding data file
 
     with open('data.dat', 'a', newline='') as student_file:
         writer = csv.writer(student_file)
@@ -306,9 +313,9 @@ def main_loop(random_id, print_path, start_time):
 
 
 i = 1
-while i<2:
+while i<100:            # Run simulation 100 times
 
-    exclude = []
+    exclude = []        # If desired, add seeds to be excluded
 
     start_t = timer.time()
 

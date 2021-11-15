@@ -15,7 +15,7 @@ def calc_heuristics(graph, nodes_dict):
     RETURNS:
         - heuristics = dict with shortest path distance between nodes. Dictionary in a dictionary. Key of first dict is fromnode and key in second dict is tonode.
     """
-    
+
     heuristics = {}
     for i in nodes_dict:
         heuristics[nodes_dict[i]["id"]] = {}
@@ -56,12 +56,9 @@ def build_constraint_table(constraints, agent):
         if agent == constraint['ac']:
             neg_constraints.append(constraint)
 
-            #print('const timestep', constraint['timestep'])
-
             maxtimestep = max(constraint['timestep'],maxtimestep)
 
     for i in range(int(maxtimestep*2) + 1):
-        #print()
         constraint_table.append([])
 
     for constraint in neg_constraints:
@@ -72,15 +69,10 @@ def build_constraint_table(constraints, agent):
 
 def is_constrained(curr_loc, next_loc, next_time, constraint_table,agent):
 
-    #print('agent',constraint_table)
-
     if len(constraint_table)<(next_time*2+1):
         return False
 
     else:
-        # if len(constraint_table[int(next_time*2)]) == 0:
-        #     return False
-        # else:
         for entries in constraint_table[int(next_time*2)]:
             coords = entries['loc']
             if len(coords) == 1:
@@ -103,7 +95,7 @@ def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time
         - from_node = [int] node_id of node from which planning is done
         - goal_node = [int] node_id of node to which planning is done
         - heuristics = [dict] dict with shortest path distance between nodes. Dictionary in a dictionary. Key of first dict is fromnode and key in second dict is tonode.
-        - time_start = [float] planning start time. 
+        - time_start = [float] planning start time.
         - Hint: do you need more inputs?
     RETURNS:
         - success = True/False. True if path is found and False is no path is found
@@ -132,10 +124,8 @@ def simple_single_agent_astar(nodes_dict, from_node, goal_node, heuristics, time
     closed_list[(root['loc'], root['timestep'])] = root
 
     remain = root['remain']
-    #if cbs: condition = remain<5
 
-
-    while len(open_list) > 0:# and remain<5:
+    while len(open_list) > 0:# and remain<5:        #Only use remain<5 for CBS !
 
 
 
@@ -218,5 +208,4 @@ def get_path(goal_node):
         path.append((curr['loc'], curr['timestep']))
         curr = curr['parent']
     path.reverse()
-    #print(path)
     return path
